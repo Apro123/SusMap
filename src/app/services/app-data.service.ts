@@ -9,7 +9,7 @@ import { forkJoin } from 'rxjs';
 export class AppDataService {
 
   SHEETS_ID = "12jc_EN3Uh5RHPjjmI-osbys7oHBq9RPSWn71_4zhRSM";
-  SHEETS_API_KEY = "AIzaSyBZgDR2xgMIi_xlt-luKmuJPj2DUxsplnk";
+  SHEETS_API_KEY = "AIzaSyCm9Nmy4Swo-1nNLurhv-kfzbr_DJd-yCQ";
   private baseURLpt1 = "https://sheets.googleapis.com/v4/spreadsheets/" + this.SHEETS_ID + "/values/'";
   //surround the name of the sheet with a single quotes
   private baseURLpt2 = "'?key=" + this.SHEETS_API_KEY;
