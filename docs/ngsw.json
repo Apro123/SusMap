@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1601420913464,
+  "timestamp": 1607111193953,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -197,8 +197,8 @@
         "/cordova_plugins.js",
         "/favicon.ico",
         "/index.html",
-        "/main-es2015.237a22e2e7a9a2d633e7.js",
-        "/main-es5.237a22e2e7a9a2d633e7.js",
+        "/main-es2015.2fab1aefdcb63400aaf4.js",
+        "/main-es5.2fab1aefdcb63400aaf4.js",
         "/manifest.webmanifest",
         "/polyfills-es2015.c1f142d23713235da53a.js",
         "/polyfills-es5.3f81798dab399e8c607f.js",
@@ -505,9 +505,9 @@
     "/cordova.js": "cac7e8dfad5ad180430abd13873fea475dcad328",
     "/cordova_plugins.js": "ec83c2c92016296a53d13b66561c2cb5aa446ab7",
     "/favicon.ico": "696dfbca3c3326f3a7832c34da7188bf98d59dbe",
-    "/index.html": "1790bfc3754e4c9e7bd5fd3778c3366549366c14",
-    "/main-es2015.237a22e2e7a9a2d633e7.js": "7cffb4ee5b06f97b777dac62706befffe71fba38",
-    "/main-es5.237a22e2e7a9a2d633e7.js": "20940764b702672bc3ed12b4b14391001f67f77c",
+    "/index.html": "5e36e2f4255df6c85bf7745fa2c2fdab5dcaa912",
+    "/main-es2015.2fab1aefdcb63400aaf4.js": "3b4e31eeb536e71cf53d151b5953d55b06707342",
+    "/main-es5.2fab1aefdcb63400aaf4.js": "c634d5ab13827c4d94fccf4357b32691f272f93e",
     "/manifest.webmanifest": "448139c4935c7caef796234781d1b6b709d0ddad",
     "/polyfills-es2015.c1f142d23713235da53a.js": "d09f5d54be882e501e006c5c097486eef3dbb188",
     "/polyfills-es5.3f81798dab399e8c607f.js": "af404837a6ad1932d594467825a065c901c1446d",
