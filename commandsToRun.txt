@@ -7,3 +7,4 @@ inside docs run:
   ln -s favicon.ico apple-touch-icon.png
   ln -s favicon.ico apple-touch-icon-precomposed.png
 cp platforms/browser/config.xml into docs folder
+cp .htaccess to docs folder
