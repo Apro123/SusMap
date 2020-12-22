@@ -115,7 +115,7 @@ export class HomePage implements OnInit {
     ) {
       console.log("in constructor");
       //check if new to the map
-      this.appData.getUpdatedToastTips("TOSPP").then((val) => {
+      this.appData.getTOSPP().then((val) => {
         if(val === false) {
           this.openTosPPModal(true); //build the map after tos accepted
         } else {
@@ -1021,6 +1021,7 @@ export class HomePage implements OnInit {
 
       modal.onDidDismiss().then((detail: OverlayEventDetail) => {
         if(agreeBtn) {
+          this.appData.setTOSPP(true);
           this.buildMap();
         }
       });

@@ -169,6 +169,26 @@ export class AppDataService {
     });
   }
 
+  async getTOSPP() {
+    return await new Promise<any>((resolve, reject) => {
+      this.storage.get("TOSPP_TIPS").then((val) => {
+        if(val && val === true) {
+          resolve(true); //set to true in production
+        } else {
+          // this.storage.set(n, true);
+          resolve(false);
+        }
+      }).catch((err) => {
+        console.log(err);
+        reject(err);
+      });
+    });
+  }
+
+  setTOSPP(val) {
+    this.storage.set("TOSPP_TIPS", val);
+  }
+
 
   // updateFilterData(filters) {
   //   this.filterNames = filters;
