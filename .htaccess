@@ -1,5 +1,4 @@
-RewriteEngine On
-RewriteRule ^(.*)$ http://map-sustainability.ucmerced.edu/ [R=301]
+ErrorDocument 404 /
 
 <LimitExcept GET HEAD>
   Order Allow,Deny
