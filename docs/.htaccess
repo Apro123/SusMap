@@ -1,1 +1,6 @@
 ErrorDocument 404 /
+
+<LimitExcept GET HEAD>
+  Order Allow,Deny
+  Deny from all
+</LimitExcept>
