@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1608679721543,
+  "timestamp": 1609888659060,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -181,7 +181,7 @@
     "/assets/shapes.svg": "5413e95adabcb2cb639970051f55e0ddb64ace53",
     "/cool-background.6ef8b2701bd3f935df50.png": "7655c279e40a30965050801a5acea87ea9abda66",
     "/favicon.ico": "696dfbca3c3326f3a7832c34da7188bf98d59dbe",
-    "/index.html": "2fbe1557cbc415bff911c28ffe2db460cfd61833",
+    "/index.html": "ba50fa4c5e5945b9758245786733532b46234816",
     "/manifest.webmanifest": "448139c4935c7caef796234781d1b6b709d0ddad",
     "/plugins/cordova-plugin-device/src/browser/DeviceProxy.js": "07e52df2dd87e6483a9b2e47e6852414c8e24485",
     "/plugins/cordova-plugin-device/www/device.js": "3384a9fbcbac5606947d23051b28f36611a91513",
