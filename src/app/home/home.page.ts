@@ -442,7 +442,7 @@ export class HomePage implements OnInit {
           let parkingMarkerOpt = {
             position: (new LatLngBounds(this.buildings[i]['COORS'])).getCenter(),
             icon: {
-              url: 'assets/icon/parking.png',
+              url: './assets/icon/parking.png',
               size: {
                 width: 30,
                 height: 30
@@ -518,7 +518,7 @@ export class HomePage implements OnInit {
           {
             min: 3,
             max: 200,
-            url: 'assets/icon/parking.png',
+            url: './assets/icon/parking.png',
             label: {
               bold: true,
               fontSize: 32,
@@ -759,7 +759,7 @@ export class HomePage implements OnInit {
           {
             min: 3,
             max: 200,
-            url: markerDataIndv['ICON']['url'],
+            url: './'+markerDataIndv['ICON']['url'],
             label: {
               bold: true,
               fontSize: 32,
@@ -791,7 +791,7 @@ export class HomePage implements OnInit {
           }
 
           var icon = {
-            url: filt['DATA'][i]['ICON'],
+            url: './'+filt['DATA'][i]['ICON'],
             size: {
               width: 35,
               height: 35
