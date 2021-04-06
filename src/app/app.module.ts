@@ -15,15 +15,15 @@ import { IonicStorageModule } from '@ionic/storage';
 import { AppDataService } from './services/app-data.service';
 import { EventService } from './events/event.service';
 
-import { HammerGestureConfig, HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
-import * as Hammer from 'hammerjs';
-export class CustomHammerConfig extends HammerGestureConfig {
-  overrides = {
-    'pan': {
-      direction: Hammer.DIRECTION_ALL
-    }
-  }
-}
+// import { HammerGestureConfig, HAMMER_GESTURE_CONFIG } from '@angular/platform-browser';
+// import * as Hammer from 'hammerjs';
+// export class CustomHammerConfig extends HammerGestureConfig {
+//   overrides = {
+//     'pan': {
+//       direction: Hammer.DIRECTION_ALL
+//     }
+//   }
+// }
 
 //import all the modals
 import { BuildingModalPageModule } from './building-modal/building-modal.module';
@@ -62,8 +62,8 @@ import { environment } from '../environments/environment';
     EventService,
     // TextToSpeech,
     Geolocation,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    { provide: HAMMER_GESTURE_CONFIG, useClass: CustomHammerConfig}
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
+    // { provide: HAMMER_GESTURE_CONFIG, useClass: CustomHammerConfig}
   ],
   bootstrap: [AppComponent]
 })
