@@ -25,13 +25,14 @@
 <!-- [fullscreen]="true -->
 
 <ion-content padding (contextmenu)="stop_close($event);" (onContextMenu)="stop_close($event);">
-  <div [ngClass]="{'search' : search, 'nosearch' : !search}" id="map_canvas">
+  <div [class.search] = "search === true"
+  [class.nosearch] = "search === false" id="map_canvas"></div>
+  <!-- <div [ngClass]="{'search' : search, 'nosearch' : !search}" id="map_canvas">
     <ion-fab vertical="top" horizontal="start" slot="fixed">
       <ion-fab-button color="success">
         <ion-icon name="color-filter-outline"></ion-icon>
       </ion-fab-button>
       <ion-fab-list side="bottom">
-        <!-- <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); filter['ACTIVE'] = !filter['ACTIVE']; publishEvent(filter['FILTER_NAME'], filter);" (press)="onPress(filter)" (pressup)="stop_close($event); onPressUp()"> -->
         <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); filter['ACTIVE'] = !filter['ACTIVE']; publishEvent(filter['FILTER_NAME'], filter);" (press)="onPress(filter)" (pressup)="stop_close($event);">
           <ion-icon *ngIf="!filter['ACTIVE']" [name]="filter['ICON']"></ion-icon>
           <ion-icon *ngIf="filter['ACTIVE']" [name]="filter['ICON-SELECTED']"></ion-icon>
@@ -63,7 +64,6 @@
     [class.enabled]="mylocationEnabled"
     [class.disabled]="!mylocationEnabled">
       <img (press)="onPress({}, false);" (click)="toggleMyLocation();" src="assets/icon/location.png" alt="my-location">
-      <!-- <img (click)="toggleMyLocation();" src="assets/icon/location.png" alt="my-location"> -->
     </div>
-  </div>
+  </div> -->
 </ion-content>

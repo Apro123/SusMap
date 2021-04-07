@@ -1,23 +1,23 @@
 import { Component, NgZone, OnInit, ViewChild } from '@angular/core';
 import { ToastController, Platform, LoadingController, ModalController, IonFab } from '@ionic/angular';
-import { GoogleMaps,
-  GoogleMap,
-  GoogleMapsEvent,
-  Marker,
-  MarkerOptions,
-  MarkerCluster,
-  MarkerClusterOptions,
-  GoogleMapsAnimation,
-  MyLocation,
-  ILatLng,
-  LatLngBounds,
-  PolygonOptions,
-  Polygon,
-  Poly,
-  HtmlInfoWindow,
-  VisibleRegion,
-  MarkerIcon } from '@ionic-native/google-maps';
-import { mapStyle } from './mapStyle';
+// import { GoogleMaps,
+//   GoogleMap,
+//   GoogleMapsEvent,
+//   Marker,
+//   MarkerOptions,
+//   MarkerCluster,
+//   MarkerClusterOptions,
+//   GoogleMapsAnimation,
+//   MyLocation,
+//   ILatLng,
+//   LatLngBounds,
+//   PolygonOptions,
+//   Polygon,
+//   Poly,
+//   HtmlInfoWindow,
+//   VisibleRegion,
+//   MarkerIcon } from '@ionic-native/google-maps';
+// import { mapStyle } from './mapStyle';
 import { EventService } from './../events/event.service';
 import { AppDataService } from './../services/app-data.service';
 import { Router } from '@angular/router';
@@ -30,6 +30,10 @@ import { AboutPage } from './../about/about.page';
 import { TosPpPage } from './../tos-pp/tos-pp.page';
 // import { TextToSpeech } from '@ionic-native/text-to-speech/ngx';
 import { Geolocation, Geoposition } from '@ionic-native/geolocation/ngx';
+import * as $ from 'jquery'; //used for leaflet bug
+import * as Leaflet from 'leaflet';
+import 'leaflet.markercluster';
+import "leaflet-layervisibility";
 
 @Component({
   selector: 'app-home',
@@ -38,53 +42,66 @@ import { Geolocation, Geoposition } from '@ionic-native/geolocation/ngx';
 })
 export class HomePage implements OnInit {
 
-    public htmlInfoWindow;
+    // public htmlInfoWindow;
     public buildings = [];
     public filters = [];
+    // example json
     //   {
     //     Name: 'Economic',
     //     active: false,
     //     data: [{ all the filter data }],
-    //     markerData: [ {
-    //      title: //for the search only
-    //      description: //for the search only
-    //      icon: //for comparison purposes and marker clusterered icon
-    //      marker cluster: //actual object?
-    //      marker cluster options: //so that you can recreate the cluster
-    //      marker options: //for the cluster. used to add multiple marker option data. if only size one then a singular marker will be created
-    //      marker: //for regular singular markers
-    //      }, ...]
+    //     cluster: [Leaflet marker cluster group objects (clusters+markers)]
+      ///not implemented  // markerData: [ {
+        //  title: //for the search only
+        //  description: //for the search only
+        //  icon: //for comparison purposes and marker clusterered icon
+        //  marker cluster: //actual leaflet object
+        //  marker cluster options: //so that you can recreate the cluster
+        //  marker options: //for the cluster. used to add multiple marker option data. if only size one then a singular marker will be created
+        //  marker: //for regular singular markers
+        //  }, ...]
     //   },
     // ];
 
     //parking cluster feature
-    public parkingMarkerCluster; //type marker cluster
-    private parkingMarkerOpts = [];
-    private parkingMarkerClusterOpts: MarkerClusterOptions;
-    public parkingMarkerFlag = true;
+    public parkingMarkerCluster; //type leaflet marker cluster group
+    // private parkingMarkerOpts = [];
+    // private parkingMarkerClusterOpts: MarkerClusterOptions;
+    // public parkingMarkerFlag = true;
 
     //map
-    public map: GoogleMap;
+    // public map: GoogleMap;
+    public map: Leaflet.Map;
 
     //main toast variable
     private toast;
 
     //toast and loading
-    private dataFlag = false; //used in couplation of loading controller and loading data
     public loading; //loading controller
     private toastFlagFilter = false;
     private toastFlagLocation = false;
+    // private dataFlag = false; //used in couplation of loading controller and loading data
 
-    //press, hold, search features
-    private pressFlag = false; //press and hold for filter items
-    public search = false; //for search functionality
+    //search functionality
+    public search = false; //searching right now for items
+
+    private toSearch = []; //for search functionality
     public itemAvailable = false; //for search functionality
     public filteredItems = []; //for search functionality
-    private toSearch = []; //for search functionality
+
+    //press and hold functionality
+    private pressFlag = false; //press and hold for filter items
 
     //settings and about page
     private about = {};
     private settings = {};
+    // example json
+    // settings = {
+    //   "LOCATIONS": [[37, -123], [37, -120], ...],
+    //   "ZOOM": 14,
+    //   "MIN_ZOOM" : 12
+    //   "MAX_ZOOM": 20
+    // }
 
     //location feature
     public locationNumber = 1; //current location
@@ -113,7 +130,7 @@ export class HomePage implements OnInit {
       private modalController: ModalController,
       private geolocation: Geolocation
     ) {
-      console.log("in constructor");
+      // console.log("in constructor");
       //check if new to the map
       this.appData.getTOSPP().then((val) => {
         if(val === false) {
@@ -124,30 +141,39 @@ export class HomePage implements OnInit {
       });
     }
 
-    async ionViewWillEnter() {
+    //when view will enter, close everything. Just to handle any extra bugs that might be present in the UI
+    ionViewWillEnter() {
       try {
         this.closeEverything();
       } catch (error) {
       }
     }
 
-    async ngOnInit() {
-      console.log("inside ngoninit");
-    }
+    // async ngOnInit() {
+    //   console.log("inside ngoninit");
+    // }
 
+    /////////////////////////////// MAIN MAP INITIALIZATION METHODS
+
+    //main beginning method to build the map and all the marker/markerclusters
     async buildMap() {
-      var pArr = []
+      var pArr = [];
       pArr.push(this.appData.getOneLineData("SETTINGS"));
       pArr.push(this.appData.getBuildingFilterNames(true, "home"));
       pArr.push(this.appData.getOneLineData("ABOUT"));
 
+      //for join the promises in order to execute them together for performance reasons
       forkJoin(pArr).subscribe(async (data) => {
+        //parse the basic map settings
         this.parseSettings(data[0]).then(() => {
+          //need to wait for the map to load, then you can start parsing buildings and filters
           this.parseBuildingFilterNames(data[1]); //for load map
         });
+        //parse the about page. (not critical)
         this.parseAbout(data[2]);
       });
 
+      //loading controller object created in case data fetch takes a long time
       this.loading = await this.loadingController.create({
         spinner: "bubbles",
         duration: 500*this.filters.length,
@@ -156,26 +182,33 @@ export class HomePage implements OnInit {
         backdropDismiss: false
       });
 
+      // this.loading.present().then(() => {
+      //   this.loading.onWillDismiss().then(() => {
+      //   });
+      // });
+      await this.loading.present();
+
       // Since ngOnInit() is executed before `deviceready` event,
       // you have to wait the event.
       this.platform.ready().then(() => {
         this.htmlInfoWindow = new HtmlInfoWindow();
       });
 
-      //lowest priority
+      //lowest priority (not critical)
       this.setToastFlags();
     }
 
+    //setting of the map
     async parseSettings(data) {
-      return await new Promise<any>((res, rej) => {
+      return await new Promise<any>((resolve, reject) => {
         try {
           this.settings = data;
-          var locs: ILatLng[] = [];
-          for (let i = 1; i <= this.settings["LOCATIONS"]; i++) {
-            var temp: ILatLng = {
+          var locs: Leaflet.latLng[] = [];
+          for (let i = 1; i <= parseInt(this.settings["LOCATIONS"]); i++) {
+            var temp = Leaflet.latLng({
               lat: parseFloat(this.settings["LATITUDE " + i]),
               lng: parseFloat(this.settings["LONGITUDE " + i])
-            }
+            })
             locs.push(temp);;
             delete this.settings["LATITUDE " + i];
             delete this.settings["LONGITUDE " + i];
@@ -184,42 +217,28 @@ export class HomePage implements OnInit {
           this.settings["ZOOM"] = parseFloat(this.settings["ZOOM"]);
           this.settings["MIN_ZOOM"] = parseFloat(this.settings["MIN_ZOOM"]);
           this.settings["MAX_ZOOM"] = parseFloat(this.settings["MAX_ZOOM"]);
-          res();
+          //reached example json format
+          resolve();
         } catch (e) {
+          //there is some error
           console.log(e);
-          rej();
+          reject();
         }
       });
     }
 
-    async parseBuildingFilterNames(data) {
-      this.buildings = data[0];
-      this.filters = data[1];
-      // console.log("got it");
-
-      // this.events.publish("Building and Filter Names", data); //so there is no repeat
+    parseBuildingFilterNames(data) {
+      this.buildings = data[0]; //all the building data
+      this.filters = data[1]; //just the names of the filters
 
       //load the map
-      await this.loadMap();
+      this.loadMap();
 
       //close everything when map is clicked
-      this.map.on(GoogleMapsEvent.MAP_CLICK).subscribe((latlng) => {
+      this.map.on("click").subscribe(() => {
         console.log("map click");
         this.closeEverything();
       });
-
-      //drag end check if need to add home only if no other spots
-      // this.map.on(GoogleMapsEvent.MAP_DRAG_END).subscribe(() => {
-      //   console.log("map drag end")
-      //   console.log(this.map.getCameraTarget());
-        // var visibleReg: VisibleRegion = this.map.getVisibleRegion();
-        // console.log(visibleReg.contains(this.locations[0]));
-        // if(!visibleReg.contains(this.locations[0]) && this.locationNumber == -1) {
-        //   this.locationNumber = 0;
-        // } else if(visibleReg.contains(this.locations[0]) && this.locationNumber == 0) {
-        //   this.locationNumber = -1
-        // }
-      // });
 
       //below is only possible with the data recieved
 
@@ -228,81 +247,14 @@ export class HomePage implements OnInit {
 
       //get the filter data whenever
       this.appData.getAllFilterData(true).then((data: []) => {
-        this.filters = data;
-
-        var promArr = []
-        for (let i = 0; i < this.filters.length; i++) {
-          promArr.push(this.createFilterMarkers(this.filters[i]));
-        }
-
-        forkJoin(promArr).subscribe((data: []) => {
-          //following must be included after the filters
-          for (let i = 0; i < this.filters.length; i++) {
-            //triggered by trigger function in changes status method
-            this.map.addEventListener(this.filters[i]['FILTER_NAME']).subscribe(async () => {
-              if(!this.toastFlagFilter) {
-                this.createToast("TIP", "Hold the filter icon to see a list of all filters", "light");
-                this.toastFlagFilter = true;
-              }
-
-              //actual code to toggle the visibility of the markers
-              for (let j = 0; j < this.filters[i]['MARKER_DATA'].length; j++) {
-                // const element = this.filters[i]['MARKER_DATA'][j];
-                if(this.filters[i]['MARKER_DATA'][j]['MARKER']) {
-                  //if it is an individual marker then
-                  this.filters[i]['MARKER_DATA'][j]['MARKER'].setVisible(this.filters[i]['ACTIVE']);
-                } else {
-                  // if it is a cluster then call function
-                  this.toggleClusterMarker(this.filters[i]['MARKER_DATA'][j], this.filters[i]['ACTIVE']);
-                }
-              }
-            });
-          }
-          this.dataFlag = true;
-          //try to dismiss the loading if it is necessary
-          try {
-            this.loading.dismiss();
-          } catch (error) {
-            console.log("not needed: " + error);
-          }
-          console.log("added all markers and listeners");
-        });
-
+        implementFilterData(data);
       });
 
-      // updated event filters active status
-      for (let i = 0; i < this.filters.length; i++) {
 
-        //make filter active/not active
-        await this.events.subscribe(this.filters[i]['FILTER_NAME'], (data: any) => {
-          // update active status
-          this.filters[i]['ACTIVE'] = data['ACTIVE'];
-
-          //first check if data has come in
-          if(!this.dataFlag) {
-            console.log("U GOTTA WAIT");
-            this.loading.present().then(() => {
-              this.loading.onWillDismiss().then(() => {
-
-                this.changeStatus(this.filters[i]['FILTER_NAME']);
-
-              });
-            });
-          } else {
-            // if(!this.filters[i]['DATA'][0]['MARKER']) {
-            //   console.log("NO MARKER....AHH SHIT");
-            // }
-            //if it has then update the visible status
-            this.changeStatus(this.filters[i]['FILTER_NAME']);
-          }
-
-        });
-      }
     }
 
     parseAbout(val) {
       this.about = val;
-      // console.log(this.about);
       var tempT = [];
       var tempD = [];
       for (let i = 1; i <= this.about["NUM_GOALS"]; i++) {
@@ -316,11 +268,11 @@ export class HomePage implements OnInit {
           //do nothing base64 data or external link
         } else {
           //image stored in images folder
-          this.about["IMAGE"] = 'assets/images/' + this.about["IMAGE"];
+          this.about["IMAGE"] = './assets/images/' + this.about["IMAGE"];
         }
       } else {
         //if it does not exist
-        this.about["IMAGE"] = "assets/images/campus.jpg";
+        this.about["IMAGE"] = "./assets/images/campus.jpg";
       }
 
       this.about["GOAL TITLES"] = tempT;
@@ -328,73 +280,344 @@ export class HomePage implements OnInit {
       // console.log(this.about);
     }
 
+    //load the actual map instance
     loadMap() {
-      let style = [];
-      style = mapStyle;
+      //leaflet map setup
+      this.map = Leaflet.map('map_canvas');
 
+      // set the center with zoom = min zoom plus one
+      var center = this.settings["LOCATIONS"][0]; //the first one is the center
+      this.map.setView(this.settings["LOCATIONS"][0], this.settings["MIN_ZOOM"]+1);
+      // set the minimum zoon
+      this.map.setMinZoom(this.settings["MIN_ZOOM"]);
+      // set the max zoom
+      // this.map.setMaxZoom(this.settings["MAX_ZOOM"]); //disabled for clustering functionality
 
-      this.map = GoogleMaps.create('map_canvas', {
-        camera: {
-          target: this.settings["LOCATIONS"][0],
-          zoom: this.settings["ZOOM"],
-          tilt: 0,
-        },
-        'gestures': {
-          'scroll': true, 'tilt': true, 'rotate': false, 'zoom': true
-        },
-        styles: style,
-        preferences: {
-          zoom: {
-            minZoom: this.settings["MIN_ZOOM"],
-            maxZoom: this.settings["MAX_ZOOM"]
-          },
-        }
+      /////// following is for leaflet bug of tiles not showing until resize
+      this.map.on("load", function() {
+        setTimeout(() => {
+          this.invalidateSize();
+        }, 100);
       });
+      const comp = this;
+      $(document).ready(function(){
+        $(window).trigger('resize');
+        window.dispatchEvent(new Event('resize'));
+        var resizeEvent = window.document.createEvent('UIEvents');
+        resizeEvent.initEvent('resize', true, false);
+        window.dispatchEvent(resizeEvent);
+        comp.init();
+      });
+      ///////////////////
 
-      this.map.setIndoorEnabled(true);
-      this.map.setMyLocationEnabled(false);
-      this.map.setMyLocationButtonEnabled(false);
+      // put the zoom controls on the bottom right
+      Leaflet.control.zoom({
+        position:'bottomright'
+      }).addTo(map);
+
+      // add the basemap
+      Leaflet.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '© Carto Basemaps',
+      }).addTo(this.map);
     }
 
-    setToastFlags() {
-      this.appData.getUpdatedToastTips("Filter").then((val) => {
-        this.toastFlagFilter = val;
+    /////////////////////////////// END MAIN MAP INITIALIZATION METHODS
+
+
+    /////////////////////////////// POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
+
+    //function to call when filter data recived
+    implementFilterData(data) {
+      this.filters = data; //similar to examplejson without the parsed data yet
+
+      //promise array with fork join for performance reasons
+      var promArr = [];
+      for (let i = 0; i < this.filters.length; i++) {
+        promArr.push(this.createFilterMarkers(this.filters[i]));
+      }
+
+      forkJoin(promArr).subscribe((data: []) => {
+        //following must be included after the filters
+        for (let i = 0; i < this.filters.length; i++) {
+          //triggered by trigger function in changes status method
+          this.map.addEventListener(this.filters[i]['FILTER_NAME']).subscribe(async () => {
+            if(!this.toastFlagFilter) {
+              this.createToast("TIP", "Hold the filter icon to see a list of all filters", "light");
+              this.toastFlagFilter = true;
+            }
+
+            this.toggleClusterMarker(this.filters[i]);
+          });
+        }
+
+        //dismiss the loading container
+        this.loading.dismiss();
+        console.log("added all markers and listeners");
       });
-      this.appData.getUpdatedToastTips("Location").then((val) => {
-        this.toastFlagLocation = val;
-      });
+
+      //subscribe to any filter clicks
+      // // updated event filters active status
+      // for (let i = 0; i < this.filters.length; i++) {
+      //
+      //   //make filter active/not active
+      //   await this.events.subscribe(this.filters[i]['FILTER_NAME'], (data: any) => {
+      //     // update active status
+      //     this.filters[i]['ACTIVE'] = data['ACTIVE'];
+      //
+      //     //first check if data has come in
+      //     // if(!this.dataFlag) {
+      //     //   console.log("U GOTTA WAIT");
+      //     //   this.loading.present().then(() => {
+      //     //     this.loading.onWillDismiss().then(() => {
+      //     //
+      //     //       this.changeStatus(this.filters[i]['FILTER_NAME']);
+      //     //
+      //     //     });
+      //     //   });
+      //     // } else {
+      //       // if(!this.filters[i]['DATA'][0]['MARKER']) {
+      //       //   console.log("NO MARKER....AHH SHIT");
+      //       // }
+      //       //if it has then update the visible status
+      //       this.changeStatus(this.filters[i]['FILTER_NAME']);
+      //     // }
+      //
+      //   });
+      // }
     }
 
-    async animateCamera(lat, long) {
-      console.log("animating camera");
-      this.map.animateCamera({
-        target: {lat: lat, lng: long},
-        zoom: 17,
-        tilt: 0,
-        // bearing: 140,
-        duration: 10000
-      });
+    async addIconToBuilding(iconUrl:string, buildingID) {
+      const ind = this.buildings.findIndex(building => building['BUILDING_ID'] === buildingID);
+      this.buildings[ind]["ICONS"].push(iconUrl);
     }
 
-    handleLocationChange() {
-      this.animateCamera(this.settings["LOCATIONS"][this.locationNumber]['lat'], this.settings["LOCATIONS"][this.locationNumber]['lng']).then(async () => {
-        this.locationNumber += 1;
-        if(this.locationNumber ==  this.settings["LOCATIONS"].length) {
-          this.locationNumber = 0;
-        }
-        if(!this.toastFlagLocation) {
-          this.createToast("TIP", "Click some filters on the top right to see what's available here in the area!", "light");
-          this.toastFlagLocation = true;
-        }
-      });
+    // async createHtmlInfoWindow(marker: Marker) {
+    //   this.closeEverything();
+    //   let frame: HTMLElement = document.createElement('div');
+    //
+    //   frame.innerHTML = `
+    //   <div class="markerInfoWindow">
+    //     <h5>` + marker.get('TITLE') + `</h5>
+    //     <p><small>` + marker.get('DESCRIPTION') + `<small></p>
+    //   </div>
+    //   `;
+    //
+    //   this.htmlInfoWindow.setContent(frame, {
+    //     "text-align": 'center',
+    //     "min-height": "20vh",
+    //     // "max-height": "40vh",
+    //     "min-width": "45vw",
+    //     // "max-width": "65vw",
+    //     "padding": "0px",
+    //     "margin": "-1vw", //offset
+    //   });
+    //
+    //   this.htmlInfoWindow.open(marker);
+    // }
 
+    createPopupHTML(title, desc) {
+      return `<div class="markerInfoWindow" style="text-align: 'center'; min-height: '20vh'; min-width: '45vw'; padding: '0px'; margin: '-1vw' ">
+        <h5>` + marker.get('TITLE') + `</h5>
+        <p><small>` + marker.get('DESCRIPTION') + `<small></p>
+      </div>`;
+    }
+
+    async toggleClusterMarker(filt) {
+      //flip active status:
+      filt['ACTIVE'] = !filt['ACTIVE'];
+
+      //// TODO: look into using addLayers and removeLayers
+      for (var i = 0; i < filt['CLUSTER'].length; i++) {
+        //need to add the layers of all the marker cluster groups
+        if(filt['ACTIVE']) {
+          //if the map is already on the map then dont add the layer. This happens when user searches for item
+          if(!this.map.hasLayer(filt['CLUSTER'][i])) {
+            this.map.addLayer(filt['CLUSTER'][i]);
+          }
+        } else { //remove all the layers if possible
+          //if the map has the layer then remove the layer
+          if(this.map.hasLayer(filt['CLUSTER'][i])) {
+            this.map.removeLayer(filt['CLUSTER'][i]);
+          }
+        }
+
+      }
+
+
+
+      // if(create) {
+      //   if(!markerDataIndv['MARKER_CLUSTER']) {
+      //     markerDataIndv['MARKER_CLUSTER'] = this.map.addMarkerClusterSync(markerDataIndv['MARKER_CLUSTER_OPTIONS']);
+      //
+      //     markerDataIndv['MARKER_CLUSTER'].on(GoogleMapsEvent.MARKER_CLICK).subscribe((params) => {
+      //       let marker: Marker = params[1];
+      //       this.createHtmlInfoWindow(marker);
+      //     });
+      //   }
+      // } else {
+      //   //otherwise remove the cluster
+      //   markerDataIndv['MARKER_CLUSTER'].remove();
+      //   delete markerDataIndv['MARKER_CLUSTER'];
+      // }
+    }
+
+    // async createClusterMarkerOptions(markerDataIndv) {
+    //   let markerClusterDataOpt: MarkerClusterOptions;
+    //   // console.log(markerDataIndv['ICON']);
+    //   markerClusterDataOpt = {
+    //     markers: markerDataIndv['MARKER_OPTIONS'],
+    //     icons: [
+    //       {
+    //         min: 3,
+    //         max: 200,
+    //         url: './'+markerDataIndv['ICON']['url'],
+    //         label: {
+    //           bold: true,
+    //           fontSize: 32,
+    //           color: "#24f42f"
+    //         }
+    //       }
+    //     ],
+    //     boundsDraw: false,
+    //     maxZoomLevel: 18
+    //   };
+    //   markerDataIndv['MARKER_CLUSTER_OPTIONS'] = markerClusterDataOpt;
+    // }
+
+    //array of data of json objects to create the markers for. This is only for one filter
+    async createFilterMarkers(filt): Promise<any> {
+      return await new Promise<any>((resolve, reject) => {
+        // //collapse the data
+        // filt['MARKER_DATA'] = [];
+
+        //array of leaflet marker cluster groups
+        filt['CLUSTER'] = [];
+
+        // previous icon, used for clustering of similar icons
+        let prevIcon = "";
+
+        for (let i = 0; i < filt['DATA'].length; i++) {
+          // current item = filt['DATA'][i]; or arr[j]
+
+          // //if the icon
+          // if(filt['DATA'][i]['ICON'].slice(0,3) == "data") {
+          //   filt['DATA'][i]['ICON'] = filt['DATA'][i]['ICON']; //base64 data
+          // } else if(filt['DATA'][i]['ICON']) {
+          //   filt['DATA'][i]['ICON'] = 'assets/icon/'+ filt['DATA'][i]['ICON']+'.png';
+          // } else {
+          //   filt['DATA'][i]['ICON'] = "assets/icon/favicon_cluster.png";
+          // }
+
+          // current iconurl
+          var iconURL = "";
+
+          if(filt['DATA'][i]['ICON'].slice(0,3) == "data") {
+            iconURL = filt['DATA'][i]['ICON']; //base64 data
+          } else if(filt['DATA'][i]['ICON']) {
+            iconURL = 'assets/icon/'+ filt['DATA'][i]['ICON']+'.png';
+          } else {
+            iconURL = "assets/icon/favicon_cluster.png";
+          }
+
+          var lIcon = Leaflet.icon({
+            iconUrl: iconURL,
+            iconSize: [48,48]
+          })
+
+          // var icon = {
+          //   url: filt['DATA'][i]['ICON'],
+          //   size: {
+          //     width: 35,
+          //     height: 35
+          //   }
+          // };
+
+          // add to building modal
+          if(parseInt(filt['DATA'][i]['BUILDING_ID']) != 0) {
+            this.addIconToBuilding(iconURL, filt['DATA'][i]['BUILDING_ID']);
+          }
+
+          // var markerOpt = {
+          //   position: {
+          //     lat: filt['DATA'][i]['LATITUDE'],
+          //     lng: filt['DATA'][i]['LONGITUDE']
+          //   },
+          //   icon: icon,
+          //   visible: false,
+          //   zIndex: 2,
+          //   disableAutoPan: true,
+          //   "TITLE": filt['DATA'][i]['TITLE'],
+          //   "DESCRIPTION": filt['DATA'][i]['DESCRIPTION']
+          // }
+
+          //create Leaflet marker object with specific popup
+          var marker = Leaflet.marker([filt['DATA'][i]['LATITUDE'], filt['DATA'][i]['LONGITUDE']], {icon: lIcon}).bindPopup(
+            this.createPopupHTML(filt['DATA'][i]['TITLE'], filt['DATA'][i]['DESCRIPTION'])
+          );
+
+          //check if the previous icon matches. Then if it does, add it to the previous marker cluster
+          if(prevIcon != "" && iconURL === prevIcon) {
+            filt['CLUSTER'][filt['CLUSTER'].length-1].addLayer(marker);
+          } else {
+            //add toSearch here and the filter list. use promises to search for the items in the multiple individiual filter lists
+
+            var newMarkerGrp = Leaflet.markerClusterGroup();
+            newMarkerGrp.addLayer(marker);
+            filt['CLUSTER'].append(newMarkerGrp);
+          }
+
+          // //if marker data is not empty check last elemnet of marker data and see if the icons match
+          // if(filt['MARKER_DATA'].length != 0 && filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['ICON']['url'] == filt['DATA'][i]['ICON']) {
+          //   //set viisibility to true
+          //   filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['MARKER_OPTIONS'][0]['visible'] = true;
+          //   markerOpt['visible'] = true;
+          //
+          //   //add into the list of markers
+          //   filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['MARKER_OPTIONS'].push(markerOpt);
+          //
+          // } else {
+          //   //then simply add a new one into marker data
+          //   var markerDataOPT = {};
+          //   markerDataOPT['TITLE'] = filt['DATA'][i]['TITLE'];
+          //   markerDataOPT['DESCRIPTION'] = filt['DATA'][i]['DESCRIPTION'];
+          //   markerDataOPT['ICON'] = icon;
+          //   markerDataOPT['MARKER_OPTIONS'] = [markerOpt];
+          //
+          //   filt['MARKER_DATA'].push(markerDataOPT);
+          //
+          // }
+
+        } //end for
+
+        // for (let i = 0; i < filt['MARKER_DATA'].length; i++) {
+        //   // element = filt['MARKER_DATA'][i];
+        //   if(filt['MARKER_DATA'][i]['MARKER_OPTIONS'].length > 1) {
+        //     // marker options length is greater than 1 then cluster else create individual marker
+        //     this.createClusterMarkerOptions(filt['MARKER_DATA'][i]);
+        //   } else {
+        //     //create the individual marker
+        //     // console.log(filt['MARKER_DATA'][i]['MARKER_OPTIONS'][0]);
+        //     filt['MARKER_DATA'][i]['MARKER'] = this.map.addMarkerSync(filt['MARKER_DATA'][i]['MARKER_OPTIONS'][0]);
+        //
+        //     filt['MARKER_DATA'][i]['MARKER'].on(GoogleMapsEvent.MARKER_CLICK).subscribe(() => {
+        //       this.createHtmlInfoWindow(filt['MARKER_DATA'][i]['MARKER']);
+        //     });
+        //   }
+        //   this.toSearch.unshift(filt['MARKER_DATA'][i]);
+        // }
+        // //go across and make markers for each of the ones that are not clustered
+        // //otherwise form marker cluster options and THEN make a function call to create the marker cluster with parameter on whether to remove the marker cluster or create one.
+        // //add into tosearch within this new loop
+        // // console.log(this.toSearch);
+        resolve(filt);
+      });
     }
 
     async addBuildings() {
       for (let i = 0; i < this.buildings.length; i++) {
         const building = this.buildings[i];
 
-        //set up for icons at this location
+        //set up for icons at this location. added in the add icon to building method from filter markers
         this.buildings[i]["ICONS"] = [];
 
         // add the coordinates
@@ -402,16 +625,16 @@ export class HomePage implements OnInit {
         for (let coor = 1; coor <= building['NUM_COORDINATES']; coor++) {
           var latC = building['LATITUDE ' + coor];
           var longC = building['LONGITUDE ' + coor];
-          var tempCoorSet = {
+          var tempCoorSet = Leaflet.latLng({
             lat: latC,
             lng: longC
-          };
+          });
           coords.push(tempCoorSet);
         }
 
         // let buildingCoors: ILatLng = coords
 
-        this.buildings[i]['COORS'] = coords;
+        this.buildings[i]['COORS'] = Leaflet.latLngBounds(coords);
 
         //if it is not a parking structure
         var fillC = '#eaf0ff';
@@ -421,19 +644,35 @@ export class HomePage implements OnInit {
         if(building['PARKING'].toUpperCase() == "TRUE") {
           fillC = '#808080';
           strokeC = '#454545';
+
+          //add the parking marker
+          var center = this.buildings[i]['COORS'].getCenter();
+          var parkingM
         }
 
-        // create polygon
-        let polygon: Polygon = this.map.addPolygonSync({
-          points: this.buildings[i]['COORS'],
-          strokeColor : strokeC,
-          fillColor : fillC,
-          strokeWidth: 5,
-          zIndex: 1,
-          clickable: true
+        //create leaflet polygon
+        var polygon = Leaflet.polygon(this.buildings[i]['COORS'], {
+          stroke: true,
+          color: strokeC,
+          fill: true,
+          fillColor: fillC,
+          fillOpacity: 0.8,
+          interactive: false
         });
 
-        if(building['PARKING'] == "TRUE") {
+        polygon.addTo(map); //add to the map
+
+        // // create polygon
+        // let polygon: Polygon = this.map.addPolygonSync({
+        //   points: this.buildings[i]['COORS'],
+        //   strokeColor : strokeC,
+        //   fillColor : fillC,
+        //   strokeWidth: 5,
+        //   zIndex: 1,
+        //   clickable: true
+        // });
+
+        if(building['PARKING'].toUpperCase() == "TRUE") {
           //If this building is a parking lot
 
           polygon.setClickable(false);
@@ -579,11 +818,45 @@ export class HomePage implements OnInit {
       });
     }
 
+    async animateCamera(lat, long) {
+      console.log("animating camera");
+      this.map.animateCamera({
+        target: {lat: lat, lng: long},
+        zoom: 17,
+        tilt: 0,
+        // bearing: 140,
+        duration: 10000
+      });
+    }
+
+    handleLocationChange() {
+      this.animateCamera(this.settings["LOCATIONS"][this.locationNumber]['lat'], this.settings["LOCATIONS"][this.locationNumber]['lng']).then(async () => {
+        this.locationNumber += 1;
+        if(this.locationNumber ==  this.settings["LOCATIONS"].length) {
+          this.locationNumber = 0;
+        }
+        if(!this.toastFlagLocation) {
+          this.createToast("TIP", "Click some filters on the top right to see what's available here in the area!", "light");
+          this.toastFlagLocation = true;
+        }
+      });
+
+    }
+
     async dismissActiveToast() {
       try {
         await this.toast.dismiss();
       } catch (error) {
       }
+    }
+
+    setToastFlags() {
+      this.appData.getUpdatedToastTips("Filter").then((val) => {
+        this.toastFlagFilter = val;
+      });
+      this.appData.getUpdatedToastTips("Location").then((val) => {
+        this.toastFlagLocation = val;
+      });
     }
 
     async createToast(header, message, toastC) {
@@ -704,163 +977,7 @@ export class HomePage implements OnInit {
       }
     }
 
-    async addIconToBuilding(iconUrl:string, buildingID) {
-      const ind = this.buildings.findIndex(building => building['BUILDING_ID'] === buildingID);
-      this.buildings[ind]["ICONS"].push(iconUrl);
-    }
 
-    async createHtmlInfoWindow(marker: Marker) {
-      this.closeEverything();
-      let frame: HTMLElement = document.createElement('div');
-
-      frame.innerHTML = `
-      <div class="markerInfoWindow">
-        <h5>` + marker.get('TITLE') + `</h5>
-        <p><small>` + marker.get('DESCRIPTION') + `<small></p>
-      </div>
-      `;
-
-      this.htmlInfoWindow.setContent(frame, {
-        "text-align": 'center',
-        "min-height": "20vh",
-        // "max-height": "40vh",
-        "min-width": "45vw",
-        // "max-width": "65vw",
-        "padding": "0px",
-        "margin": "-1vw", //offset
-      });
-
-      this.htmlInfoWindow.open(marker);
-    }
-
-    async toggleClusterMarker(markerDataIndv, create: boolean) {
-      if(create) {
-        if(!markerDataIndv['MARKER_CLUSTER']) {
-          markerDataIndv['MARKER_CLUSTER'] = this.map.addMarkerClusterSync(markerDataIndv['MARKER_CLUSTER_OPTIONS']);
-
-          markerDataIndv['MARKER_CLUSTER'].on(GoogleMapsEvent.MARKER_CLICK).subscribe((params) => {
-            let marker: Marker = params[1];
-            this.createHtmlInfoWindow(marker);
-          });
-        }
-      } else {
-        //otherwise remove the cluster
-        markerDataIndv['MARKER_CLUSTER'].remove();
-        delete markerDataIndv['MARKER_CLUSTER'];
-      }
-    }
-
-    async createClusterMarkerOptions(markerDataIndv) {
-      let markerClusterDataOpt: MarkerClusterOptions;
-      // console.log(markerDataIndv['ICON']);
-      markerClusterDataOpt = {
-        markers: markerDataIndv['MARKER_OPTIONS'],
-        icons: [
-          {
-            min: 3,
-            max: 200,
-            url: './'+markerDataIndv['ICON']['url'],
-            label: {
-              bold: true,
-              fontSize: 32,
-              color: "#24f42f"
-            }
-          }
-        ],
-        boundsDraw: false,
-        maxZoomLevel: 18
-      };
-      markerDataIndv['MARKER_CLUSTER_OPTIONS'] = markerClusterDataOpt;
-    }
-
-    //array of data of json objects to create the markers for. This is only for one filter
-    async createFilterMarkers(filt): Promise<any> {
-      return await new Promise<any>((resolve, reject) => {
-        //collapse the data
-        filt['MARKER_DATA'] = [];
-
-        for (let i = 0; i < filt['DATA'].length; i++) {
-          // current item = filt['DATA'][i]; or arr[j]
-
-          if(filt['DATA'][i]['ICON'].slice(0,3) == "data") {
-            filt['DATA'][i]['ICON'] = filt['DATA'][i]['ICON']; //base64 data
-          } else if(filt['DATA'][i]['ICON']) {
-            filt['DATA'][i]['ICON'] = 'assets/icon/'+ filt['DATA'][i]['ICON']+'.png';
-          } else {
-            filt['DATA'][i]['ICON'] = "assets/icon/favicon_cluster.png";
-          }
-
-          var icon = {
-            url: './'+filt['DATA'][i]['ICON'],
-            size: {
-              width: 35,
-              height: 35
-            }
-          };
-
-          if(parseInt(filt['DATA'][i]['BUILDING_ID']) != 0) {
-            this.addIconToBuilding(filt['DATA'][i]['ICON'], filt['DATA'][i]['BUILDING_ID']);
-          }
-
-          var markerOpt = {
-            position: {
-              lat: filt['DATA'][i]['LATITUDE'],
-              lng: filt['DATA'][i]['LONGITUDE']
-            },
-            icon: icon,
-            visible: false,
-            zIndex: 2,
-            disableAutoPan: true,
-            "TITLE": filt['DATA'][i]['TITLE'],
-            "DESCRIPTION": filt['DATA'][i]['DESCRIPTION']
-          }
-
-          //if marker data is not empty check last elemnet of marker data and see if the icons match
-          if(filt['MARKER_DATA'].length != 0 && filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['ICON']['url'] == filt['DATA'][i]['ICON']) {
-            //set viisibility to true
-            filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['MARKER_OPTIONS'][0]['visible'] = true;
-            markerOpt['visible'] = true;
-
-            //add into the list of markers
-            filt['MARKER_DATA'][filt['MARKER_DATA'].length - 1]['MARKER_OPTIONS'].push(markerOpt);
-
-          } else {
-            //then simply add a new one into marker data
-            var markerDataOPT = {};
-            markerDataOPT['TITLE'] = filt['DATA'][i]['TITLE'];
-            markerDataOPT['DESCRIPTION'] = filt['DATA'][i]['DESCRIPTION'];
-            markerDataOPT['ICON'] = icon;
-            markerDataOPT['MARKER_OPTIONS'] = [markerOpt];
-
-            filt['MARKER_DATA'].push(markerDataOPT);
-
-          }
-
-        } //end for
-
-        for (let i = 0; i < filt['MARKER_DATA'].length; i++) {
-          // element = filt['MARKER_DATA'][i];
-          if(filt['MARKER_DATA'][i]['MARKER_OPTIONS'].length > 1) {
-            // marker options length is greater than 1 then cluster else create individual marker
-            this.createClusterMarkerOptions(filt['MARKER_DATA'][i]);
-          } else {
-            //create the individual marker
-            // console.log(filt['MARKER_DATA'][i]['MARKER_OPTIONS'][0]);
-            filt['MARKER_DATA'][i]['MARKER'] = this.map.addMarkerSync(filt['MARKER_DATA'][i]['MARKER_OPTIONS'][0]);
-
-            filt['MARKER_DATA'][i]['MARKER'].on(GoogleMapsEvent.MARKER_CLICK).subscribe(() => {
-              this.createHtmlInfoWindow(filt['MARKER_DATA'][i]['MARKER']);
-            });
-          }
-          this.toSearch.unshift(filt['MARKER_DATA'][i]);
-        }
-        //go across and make markers for each of the ones that are not clustered
-        //otherwise form marker cluster options and THEN make a function call to create the marker cluster with parameter on whether to remove the marker cluster or create one.
-        //add into tosearch within this new loop
-        // console.log(this.toSearch);
-        resolve(filt);
-      });
-    }
 
     changeStatus(filter_name) {
       this.map.trigger(filter_name);
@@ -967,6 +1084,10 @@ export class HomePage implements OnInit {
       }, 500); //hold for 500 ms
     }
 
+
+
+    /////////////////////////////// MODALS
+
     async openFilterModal(filterData) {
       // console.log(filterData);
       const modal = await this.modalController.create({
@@ -1061,24 +1182,14 @@ export class HomePage implements OnInit {
       await modal.present();
     }
 
+    /////////////////////////////// EXTRA METHODS
+
     closeEverything() {
-      // this.htmlInfoWindow.close();
-
-      // let dummymarker = this.map.addMarkerSync({
-      //   title: 'dummy marker',
-      //   icon: 'red',
-      //   visible: false,
-      //   position: {
-      //     lat: 0,
-      //     lng: 0
-      //   }
-      // });
-      // this.htmlInfoWindow.open(dummymarker);
-      try {
-        this.htmlInfoWindow.close();
-      } catch (error) {
-
-      }
+      // try {
+      //   this.htmlInfoWindow.close();
+      // } catch (error) {
+      //
+      // }
       this.search = false;
       this.itemAvailable = false;
       this.filteredItems = [];
