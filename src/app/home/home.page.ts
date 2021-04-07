@@ -65,9 +65,9 @@ export class HomePage implements OnInit {
 
     //parking cluster feature
     public parkingMarkerCluster; //type leaflet marker cluster group
+    public parkingMarkerFlag = true;
     // private parkingMarkerOpts = [];
     // private parkingMarkerClusterOpts: MarkerClusterOptions;
-    // public parkingMarkerFlag = true;
 
     //map
     // public map: GoogleMap;
@@ -426,7 +426,7 @@ export class HomePage implements OnInit {
       //flip active status:
       filt['ACTIVE'] = !filt['ACTIVE'];
 
-      //// TODO: look into using addLayers and removeLayers
+      // TODO: look into using addLayers and removeLayers
       for (var i = 0; i < filt['CLUSTER'].length; i++) {
         //need to add the layers of all the marker cluster groups
         if(filt['ACTIVE']) {
@@ -613,12 +613,26 @@ export class HomePage implements OnInit {
       });
     }
 
+    toggleParkingClusterMarker() {
+      this.parkingMarkerFlag = !this.parkingMarkerFlag;
+
+      //if set to true then add the layer, otherwise remove it
+      if(this.parkingMarkerFlag) {
+        this.map.removeLayer(this.parkingMarkerCluster);
+      } else {
+        this.map.addLayer(this.parkingMarkerCluster);
+      }
+    }
+
     async addBuildings() {
+      //initialize the leaflet marker cluster group
+      this.parkingMarkerCluster = Leaflet.markerClusterGroup();
+
       for (let i = 0; i < this.buildings.length; i++) {
         const building = this.buildings[i];
 
         //set up for icons at this location. added in the add icon to building method from filter markers
-        this.buildings[i]["ICONS"] = [];
+        building["ICONS"] = [];
 
         // add the coordinates
         var coords = [];
@@ -634,31 +648,73 @@ export class HomePage implements OnInit {
 
         // let buildingCoors: ILatLng = coords
 
-        this.buildings[i]['COORS'] = Leaflet.latLngBounds(coords);
+        building['COORS'] = Leaflet.latLngBounds(coords);
 
         //if it is not a parking structure
         var fillC = '#eaf0ff';
         var strokeC = '#537ed0';
 
+        var polygon;
         //if it is a parking structure
-        if(building['PARKING'].toUpperCase() == "TRUE") {
+        if(building['PARKING'].toUpperCase() === "TRUE") {
           fillC = '#808080';
           strokeC = '#454545';
 
           //add the parking marker
-          var center = this.buildings[i]['COORS'].getCenter();
-          var parkingM
+          //get the center
+          var center = building['COORS'].getCenter();
+          //build the html
+          var parkingHTML = `<div class="ion-text-wrap" style="text-align: 'center'; height: 'auto'; width: 'auto'; padding: '0px'; margin: '-5px' ">
+          <p>` + building['FULL_NAME'] + `</p>`;
+          for (let i = 0; i < marker.get('des').length; i++) {
+            parkingHTML += `<small>`+ building['DESCRIPTION'][i] + `</small>`;
+          }
+          parkingHTML += `</div>`;
+
+          //add the actual marker
+          this.parkingMarkerCluster.addLayer(
+            Leaflet.marker(center, {
+              icon: Leaflet.icon({
+                iconUrl: 'assets/icon/parking.png',
+                iconSize:     [48, 48]
+              })
+            }).bindPopup(parkingHTML)
+          );
+
+          polygon = Leaflet.polygon(building['COORS'], {
+            stroke: true,
+            color: strokeC,
+            fill: true,
+            fillColor: fillC,
+            fillOpacity: 0.8,
+            interactive: false
+          });
+        } else {
+          //create a regular building polygon
+
+          //create html popup
+          var buildingHTML = building['FULL_NAME'];
+
+          if(building['LEED_CERTIFICATION'] && !(building['PARKING']=="TRUE") && building['SHORTENED_NAME']) { //if the building has a leed certification, parking building do not have leed certifications
+            buildingHTML = building['SHORTENED_NAME'];
+          }
+
+          // TODO: add click events inside the actual html code
+          buildingHTML = `<div class="infoWindow ion-text-nowrap">
+          `+ buildingHTML + `</div>`;
+
+          //create leaflet polygon
+          polygon = Leaflet.polygon(building['COORS'], {
+            stroke: true,
+            color: strokeC,
+            fill: true,
+            fillColor: fillC,
+            fillOpacity: 0.8,
+            interactive: true
+          }).bindPopup(buildingHTML);
         }
 
-        //create leaflet polygon
-        var polygon = Leaflet.polygon(this.buildings[i]['COORS'], {
-          stroke: true,
-          color: strokeC,
-          fill: true,
-          fillColor: fillC,
-          fillOpacity: 0.8,
-          interactive: false
-        });
+        building['POLYGON'] = polygon;
 
         polygon.addTo(map); //add to the map
 
@@ -672,151 +728,155 @@ export class HomePage implements OnInit {
         //   clickable: true
         // });
 
-        if(building['PARKING'].toUpperCase() == "TRUE") {
-          //If this building is a parking lot
-
-          polygon.setClickable(false);
-          // console.log("setting building clickable to false...")
-
-          let parkingMarkerOpt = {
-            position: (new LatLngBounds(this.buildings[i]['COORS'])).getCenter(),
-            icon: {
-              url: './assets/icon/parking.png',
-              size: {
-                width: 30,
-                height: 30
-              }
-            },
-            flat: true,
-            visible: true,
-            disableAutoPan: true,
-            zIndex: 2,
-            name: building['FULL_NAME'],
-            des: building['DESCRIPTION']
-          }
-
-          //add to cluster and opts array
-          // this.parkingMarkerCluster.addMarker(parkingMarkerOpt, true);
-          this.parkingMarkerOpts.push(parkingMarkerOpt);
-
-        }
-        // when clicked open htmlinfo window.
-        polygon.on(GoogleMapsEvent.POLYGON_CLICK).subscribe((data) => {
-          // if parking then set polygon clickable to false
-          polygon.setClickable(building['PARKING'].toUpperCase() == "FALSE");
-          // console.log("setting building clickable to " + building['PARKING'] == "FALSE")
-
-          // console.log("polygon clicked");
-          // this.filterFab.close(); //close the fab
-          // html info window when polygon is clicked
-          let frame: HTMLElement = document.createElement('div');
-
-          frame.innerHTML = `
-          <div class="infoWindow ion-text-nowrap">
-          `+ building['FULL_NAME'] +`
-          </div>`;
-
-          if(building['LEED_CERTIFICATION'] && !(building['PARKING']=="TRUE") && building['SHORTENED_NAME']) { //if the building has a leed certification, parking building do not have leed certifications
-            frame.innerHTML = `
-            <div class="infoWindow ion-text-nowrap">
-            `+ building['SHORTENED_NAME'] +`
-            </div>`;
-          }
-
-          frame.getElementsByClassName("infoWindow")[0].addEventListener("click", () => {
-            //open modal instead
-            // this.htmlInfoWindow.close();
-            this.goToPage(building);
-          });
-          this.htmlInfoWindow.setContent(frame, {
-            "text-align": 'center',
-            "height": "5vh",
-            "width": "auto",
-            "padding": "0px",
-            "margin": "-5px", //offset
-            "margin-top" : "1vh"
-          });
-
-          let centerMarker = this.map.addMarkerSync({
-            position: (new LatLngBounds(this.buildings[i]['COORS'])).getCenter(),
-            visible: false,
-            zIndex: 0
-          });
-          this.htmlInfoWindow.open(centerMarker);
-        });
-
-        this.buildings[i]['POLYGON'] = polygon;
-
-        this.toSearch.push(this.buildings[i]);
+        // if(building['PARKING'].toUpperCase() == "TRUE") {
+        //   //If this building is a parking lot
+        //
+        //   polygon.setClickable(false);
+        //   // console.log("setting building clickable to false...")
+        //
+        //   let parkingMarkerOpt = {
+        //     position: (new LatLngBounds(this.buildings[i]['COORS'])).getCenter(),
+        //     icon: {
+        //       url: './assets/icon/parking.png',
+        //       size: {
+        //         width: 30,
+        //         height: 30
+        //       }
+        //     },
+        //     flat: true,
+        //     visible: true,
+        //     disableAutoPan: true,
+        //     zIndex: 2,
+        //     name: building['FULL_NAME'],
+        //     des: building['DESCRIPTION']
+        //   }
+        //
+        //   //add to cluster and opts array
+        //   // this.parkingMarkerCluster.addMarker(parkingMarkerOpt, true);
+        //   this.parkingMarkerOpts.push(parkingMarkerOpt);
+        //
+        // }
+        // // when clicked open htmlinfo window.
+        // polygon.on(GoogleMapsEvent.POLYGON_CLICK).subscribe((data) => {
+        //   // if parking then set polygon clickable to false
+        //   polygon.setClickable(building['PARKING'].toUpperCase() == "FALSE");
+        //   // console.log("setting building clickable to " + building['PARKING'] == "FALSE")
+        //
+        //   // console.log("polygon clicked");
+        //   // this.filterFab.close(); //close the fab
+        //   // html info window when polygon is clicked
+        //   let frame: HTMLElement = document.createElement('div');
+        //
+        //   frame.innerHTML = `
+        //   <div class="infoWindow ion-text-nowrap">
+        //   `+ building['FULL_NAME'] +`
+        //   </div>`;
+        //
+        //   if(building['LEED_CERTIFICATION'] && !(building['PARKING']=="TRUE") && building['SHORTENED_NAME']) { //if the building has a leed certification, parking building do not have leed certifications
+        //     frame.innerHTML = `
+        //     <div class="infoWindow ion-text-nowrap">
+        //     `+ building['SHORTENED_NAME'] +`
+        //     </div>`;
+        //   }
+        //
+        //   frame.getElementsByClassName("infoWindow")[0].addEventListener("click", () => {
+        //     //open modal instead
+        //     // this.htmlInfoWindow.close();
+        //     this.goToPage(building);
+        //   });
+        //   this.htmlInfoWindow.setContent(frame, {
+        //     "text-align": 'center',
+        //     "height": "5vh",
+        //     "width": "auto",
+        //     "padding": "0px",
+        //     "margin": "-5px", //offset
+        //     "margin-top" : "1vh"
+        //   });
+        //
+        //   let centerMarker = this.map.addMarkerSync({
+        //     position: (new LatLngBounds(this.buildings[i]['COORS'])).getCenter(),
+        //     visible: false,
+        //     zIndex: 0
+        //   });
+        //   this.htmlInfoWindow.open(centerMarker);
+        // });
+        //
+        // this.buildings[i]['POLYGON'] = polygon;
+        //
+        // this.toSearch.push(this.buildings[i]);
       }
 
-      //set up for parking marker cluster
-      this.parkingMarkerClusterOpts = {
-        markers: this.parkingMarkerOpts,
-        icons: [
-          {
-            min: 3,
-            max: 200,
-            url: './assets/icon/parking.png',
-            label: {
-              bold: true,
-              fontSize: 32,
-              color: "black" //#24f42f
-            }
-          }
-        ],
-        boundsDraw: false,
-        maxZoomLevel: 18
-      };
-      this.parkingMarkerCluster = this.map.addMarkerClusterSync(this.parkingMarkerClusterOpts);
+      this.map.addLayer(this.parkingMarkerCluster);
 
-      // this is for events from model in settings if possible
-      this.events.subscribe("PARKING_MARKER_CLUSTER", (data: any) => {
-        this.changeStatus("PARKING_MARKER_CLUSTER");
-      });
-
-      // turn on and off the parking
-      this.map.addEventListener("PARKING_MARKER_CLUSTER").subscribe(() => {
-        // console.log("parking marker cluster");
-        this.parkingMarkerFlag = !this.parkingMarkerFlag;
-        if(this.parkingMarkerFlag) {
-          //if from false to true create marker cluster.
-          this.parkingMarkerCluster = this.map.addMarkerClusterSync(this.parkingMarkerClusterOpts);
-          this.openParkingMarkerCluster();
-        } else {
-          this.parkingMarkerCluster.remove();
-        }
-      });
-
-      this.openParkingMarkerCluster();
+      // //set up for parking marker cluster
+      // this.parkingMarkerClusterOpts = {
+      //   markers: this.parkingMarkerOpts,
+      //   icons: [
+      //     {
+      //       min: 3,
+      //       max: 200,
+      //       url: './assets/icon/parking.png',
+      //       label: {
+      //         bold: true,
+      //         fontSize: 32,
+      //         color: "black" //#24f42f
+      //       }
+      //     }
+      //   ],
+      //   boundsDraw: false,
+      //   maxZoomLevel: 18
+      // };
+      // this.parkingMarkerCluster = this.map.addMarkerClusterSync(this.parkingMarkerClusterOpts);
+      //
+      // // this is for events from model in settings if possible
+      // this.events.subscribe("PARKING_MARKER_CLUSTER", (data: any) => {
+      //   this.changeStatus("PARKING_MARKER_CLUSTER");
+      // });
+      //
+      // // turn on and off the parking
+      // this.map.addEventListener("PARKING_MARKER_CLUSTER").subscribe(() => {
+      //   // console.log("parking marker cluster");
+      //   this.parkingMarkerFlag = !this.parkingMarkerFlag;
+      //   if(this.parkingMarkerFlag) {
+      //     //if from false to true create marker cluster.
+      //     this.parkingMarkerCluster = this.map.addMarkerClusterSync(this.parkingMarkerClusterOpts);
+      //     this.openParkingMarkerCluster();
+      //   } else {
+      //     this.parkingMarkerCluster.remove();
+      //   }
+      // });
+      //
+      // this.openParkingMarkerCluster();
 
     }
 
-    openParkingMarkerCluster() {
-      //open html info window when parking marker is clicked
-      this.parkingMarkerCluster.on(GoogleMapsEvent.MARKER_CLICK).subscribe((params) => {
-        let marker: Marker = params[1];
-        let frame: HTMLElement = document.createElement('div');
+    // openParkingMarkerCluster() {
+    //   //open html info window when parking marker is clicked
+    //   this.parkingMarkerCluster.on(GoogleMapsEvent.MARKER_CLICK).subscribe((params) => {
+    //     let marker: Marker = params[1];
+    //     let frame: HTMLElement = document.createElement('div');
+    //
+    //     frame.innerHTML = `
+    //     <div class="ion-text-wrap">
+    //     <p>` + marker.get('name') + `</p>`;
+    //
+    //     for (let i = 0; i < marker.get('des').length; i++) {
+    //       frame.innerHTML += `<small>`+ marker.get('des')[i] + `</small>`;
+    //     }
+    //     frame.innerHTML += `</div>`;
+    //     this.htmlInfoWindow.setContent(frame, {
+    //       "text-align": 'center',
+    //       "height": "auto",
+    //       "width": "auto",
+    //       "padding": "0px",
+    //       "margin": "-5px", //offset
+    //     });
+    //
+    //     this.htmlInfoWindow.open(marker);
+    //   });
+    // }
 
-        frame.innerHTML = `
-        <div class="ion-text-wrap">
-        <p>` + marker.get('name') + `</p>`;
-
-        for (let i = 0; i < marker.get('des').length; i++) {
-          frame.innerHTML += `<small>`+ marker.get('des')[i] + `</small>`;
-        }
-        frame.innerHTML += `</div>`;
-        this.htmlInfoWindow.setContent(frame, {
-          "text-align": 'center',
-          "height": "auto",
-          "width": "auto",
-          "padding": "0px",
-          "margin": "-5px", //offset
-        });
-
-        this.htmlInfoWindow.open(marker);
-      });
-    }
+    /////////////////////////////// POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
 
     async animateCamera(lat, long) {
       console.log("animating camera");
