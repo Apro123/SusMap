@@ -1,22 +1,22 @@
-import { Component, NgZone, OnInit, ViewChild } from '@angular/core';
+import { Component, NgZone, ViewChild, ElementRef } from '@angular/core';
 import { ToastController, Platform, LoadingController, ModalController, IonFab } from '@ionic/angular';
-// import { GoogleMaps,
-//   GoogleMap,
-//   GoogleMapsEvent,
-//   Marker,
-//   MarkerOptions,
-//   MarkerCluster,
-//   MarkerClusterOptions,
-//   GoogleMapsAnimation,
-//   MyLocation,
-//   ILatLng,
-//   LatLngBounds,
-//   PolygonOptions,
-//   Polygon,
-//   Poly,
-//   HtmlInfoWindow,
-//   VisibleRegion,
-//   MarkerIcon } from '@ionic-native/google-maps';
+import { GoogleMaps,
+  GoogleMap,
+  GoogleMapsEvent,
+  Marker,
+  MarkerOptions,
+  MarkerCluster,
+  MarkerClusterOptions,
+  GoogleMapsAnimation,
+  MyLocation,
+  ILatLng,
+  LatLngBounds,
+  PolygonOptions,
+  Polygon,
+  Poly,
+  HtmlInfoWindow,
+  VisibleRegion,
+  MarkerIcon } from '@ionic-native/google-maps';
 // import { mapStyle } from './mapStyle';
 import { EventService } from './../events/event.service';
 import { AppDataService } from './../services/app-data.service';
@@ -33,16 +33,16 @@ import { Geolocation, Geoposition } from '@ionic-native/geolocation/ngx';
 import * as $ from 'jquery'; //used for leaflet bug
 import * as Leaflet from 'leaflet';
 import 'leaflet.markercluster';
-import "leaflet-layervisibility";
+import { createGesture, Gesture } from '@ionic/core';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
 })
-export class HomePage implements OnInit {
+export class HomePage {
 
-    // public htmlInfoWindow;
+    public htmlInfoWindow;
     public buildings = [];
     public filters = [];
     // example json
@@ -91,6 +91,7 @@ export class HomePage implements OnInit {
 
     //press and hold functionality
     private pressFlag = false; //press and hold for filter items
+    // @ViewChild('paragraph') p: ElementRef;
 
     //settings and about page
     private about = {};
@@ -130,6 +131,14 @@ export class HomePage implements OnInit {
       private modalController: ModalController,
       private geolocation: Geolocation
     ) {
+      // const gesture: Gesture = createGesture({
+      //   el: document.getElementsByClassName("paragraph")[0],
+      //   threshold: 15,
+      //   gestureName: 'press',
+      //   onMove: ev => this.test(ev),
+      //   onEnd: ev => this.test(ev)
+      // });
+      // gesture.enable();
       // console.log("in constructor");
       //check if new to the map
       this.appData.getTOSPP().then((val) => {
@@ -157,6 +166,21 @@ export class HomePage implements OnInit {
 
     //main beginning method to build the map and all the marker/markerclusters
     async buildMap() {
+      //loading controller object created in case data fetch takes a long time
+      this.loading = await this.loadingController.create({
+        spinner: "bubbles",
+        duration: 500*this.filters.length,
+        message: "Fetching Data...",
+        translucent: true,
+        backdropDismiss: false
+      });
+
+      // this.loading.present().then(() => {
+      //   this.loading.onWillDismiss().then(() => {
+      //   });
+      // });
+      await this.loading.present();
+
       var pArr = [];
       pArr.push(this.appData.getOneLineData("SETTINGS"));
       pArr.push(this.appData.getBuildingFilterNames(true, "home"));
@@ -173,25 +197,10 @@ export class HomePage implements OnInit {
         this.parseAbout(data[2]);
       });
 
-      //loading controller object created in case data fetch takes a long time
-      this.loading = await this.loadingController.create({
-        spinner: "bubbles",
-        duration: 500*this.filters.length,
-        message: "Fetching Data...",
-        translucent: true,
-        backdropDismiss: false
-      });
-
-      // this.loading.present().then(() => {
-      //   this.loading.onWillDismiss().then(() => {
-      //   });
-      // });
-      await this.loading.present();
-
       // Since ngOnInit() is executed before `deviceready` event,
       // you have to wait the event.
       this.platform.ready().then(() => {
-        this.htmlInfoWindow = new HtmlInfoWindow();
+        // this.htmlInfoWindow = new HtmlInfoWindow();
       });
 
       //lowest priority (not critical)
@@ -235,10 +244,7 @@ export class HomePage implements OnInit {
       this.loadMap();
 
       //close everything when map is clicked
-      this.map.on("click").subscribe(() => {
-        console.log("map click");
-        this.closeEverything();
-      });
+      this.map.on("click", this.closeEverything);
 
       //below is only possible with the data recieved
 
@@ -247,7 +253,7 @@ export class HomePage implements OnInit {
 
       //get the filter data whenever
       this.appData.getAllFilterData(true).then((data: []) => {
-        implementFilterData(data);
+        this.implementFilterData(data);
       });
 
 
@@ -283,11 +289,11 @@ export class HomePage implements OnInit {
     //load the actual map instance
     loadMap() {
       //leaflet map setup
-      this.map = Leaflet.map('map_canvas');
+      this.map = Leaflet.map('map_canvas',  {zoomControl: false }); //removes top left zoom control
 
       // set the center with zoom = min zoom plus one
       var center = this.settings["LOCATIONS"][0]; //the first one is the center
-      this.map.setView(this.settings["LOCATIONS"][0], this.settings["MIN_ZOOM"]+1);
+      this.map.setView(this.settings["LOCATIONS"][0], this.settings["MIN_ZOOM"]+3);
       // set the minimum zoon
       this.map.setMinZoom(this.settings["MIN_ZOOM"]);
       // set the max zoom
@@ -299,21 +305,20 @@ export class HomePage implements OnInit {
           this.invalidateSize();
         }, 100);
       });
-      const comp = this;
       $(document).ready(function(){
         $(window).trigger('resize');
         window.dispatchEvent(new Event('resize'));
         var resizeEvent = window.document.createEvent('UIEvents');
         resizeEvent.initEvent('resize', true, false);
         window.dispatchEvent(resizeEvent);
-        comp.init();
+        // comp.init();
       });
       ///////////////////
 
       // put the zoom controls on the bottom right
       Leaflet.control.zoom({
         position:'bottomright'
-      }).addTo(map);
+      }).addTo(this.map);
 
       // add the basemap
       Leaflet.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
@@ -339,14 +344,19 @@ export class HomePage implements OnInit {
       forkJoin(promArr).subscribe((data: []) => {
         //following must be included after the filters
         for (let i = 0; i < this.filters.length; i++) {
+          //added in order to call outside functions and variables since leaflet overrides "this" in callback functions
+          const outsideThis = this;
           //triggered by trigger function in changes status method
-          this.map.addEventListener(this.filters[i]['FILTER_NAME']).subscribe(async () => {
-            if(!this.toastFlagFilter) {
-              this.createToast("TIP", "Hold the filter icon to see a list of all filters", "light");
-              this.toastFlagFilter = true;
+          this.map.addEventListener(this.filters[i]['FILTER_NAME'], function(data) {
+            if(!outsideThis.toastFlagFilter) {
+              outsideThis.createToast("TIP", "Hold the filter icon to see a list of all filters", "light");
+              outsideThis.toastFlagFilter = true;
             }
-
-            this.toggleClusterMarker(this.filters[i]);
+            // console.log(data)
+            // console.log(outsideThis.filters)
+            // console.log(outsideThis.pressFlag)
+            // console.log(outsideThis)
+            outsideThis.toggleClusterMarker(outsideThis.filters[i]);
           });
         }
 
@@ -415,10 +425,11 @@ export class HomePage implements OnInit {
     //   this.htmlInfoWindow.open(marker);
     // }
 
-    createPopupHTML(title, desc) {
+    createPopupHTML(title, desc, iconURL) {
       return `<div class="markerInfoWindow" style="text-align: 'center'; min-height: '20vh'; min-width: '45vw'; padding: '0px'; margin: '-1vw' ">
-        <h5>` + marker.get('TITLE') + `</h5>
-        <p><small>` + marker.get('DESCRIPTION') + `<small></p>
+        <h5>` + title + `</h5>
+        <p>` + desc + `</p>
+        <small style="visibility: hidden;">`+iconURL+`</small>
       </div>`;
     }
 
@@ -552,18 +563,31 @@ export class HomePage implements OnInit {
 
           //create Leaflet marker object with specific popup
           var marker = Leaflet.marker([filt['DATA'][i]['LATITUDE'], filt['DATA'][i]['LONGITUDE']], {icon: lIcon}).bindPopup(
-            this.createPopupHTML(filt['DATA'][i]['TITLE'], filt['DATA'][i]['DESCRIPTION'])
+            this.createPopupHTML(filt['DATA'][i]['TITLE'], filt['DATA'][i]['DESCRIPTION'], iconURL)
           );
 
           //check if the previous icon matches. Then if it does, add it to the previous marker cluster
           if(prevIcon != "" && iconURL === prevIcon) {
+            // console.log("prev")
             filt['CLUSTER'][filt['CLUSTER'].length-1].addLayer(marker);
           } else {
             //add toSearch here and the filter list. use promises to search for the items in the multiple individiual filter lists
 
-            var newMarkerGrp = Leaflet.markerClusterGroup();
+            //added in order to call outside functions and variables since leaflet overrides "this" in callback functions
+            const outsideThis = this;
+            // console.log(iconURL);
+            var newMarkerGrp = Leaflet.markerClusterGroup({
+              iconCreateFunction: function(cluster) {
+                //cant call outside icon url, since this function gets called whenever there is change in the icon cluster size
+                var tempIconURL = cluster.getAllChildMarkers()[0]['_popup']["_content"].split(`hidden;">`)[1].split("<")[0];
+            		return Leaflet.divIcon({ html: outsideThis.createClusteredIconHTML(tempIconURL, cluster)});
+            	}
+            });
             newMarkerGrp.addLayer(marker);
-            filt['CLUSTER'].append(newMarkerGrp);
+            // this.map.addLayer(newMarkerGrp);
+            // this.map.removeLayer(newMarkerGrp);
+            filt['CLUSTER'].push(newMarkerGrp);
+            prevIcon = iconURL;
           }
 
           // //if marker data is not empty check last elemnet of marker data and see if the icons match
@@ -618,15 +642,38 @@ export class HomePage implements OnInit {
 
       //if set to true then add the layer, otherwise remove it
       if(this.parkingMarkerFlag) {
-        this.map.removeLayer(this.parkingMarkerCluster);
-      } else {
         this.map.addLayer(this.parkingMarkerCluster);
+      } else {
+        this.map.removeLayer(this.parkingMarkerCluster);
       }
     }
 
+    createClusteredIconHTML(img, cluster) {
+      return `<img src='`+img+`' style='margin-left: -100%;
+      margin-top: -100%;'><p style='
+      margin-bottom: 0px;
+      margin-top: -53px;
+      margin-left: 23px;
+      font-weight: bolder;
+      background: greenyellow;
+      z-index: 6;
+      padding: 2px;
+      width: 12px;
+      position: absolute;
+      border-radius: 100px;
+      '>`+cluster.getChildCount()+`</p>`;
+    }
+
     async addBuildings() {
-      //initialize the leaflet marker cluster group
-      this.parkingMarkerCluster = Leaflet.markerClusterGroup();
+      //added in order to call outside functions and variables since leaflet overrides "this" in callback functions
+      const outsideThis = this;
+
+      //initialize the leaflet marker cluster group and clustered icons
+      this.parkingMarkerCluster = Leaflet.markerClusterGroup({
+        iconCreateFunction: function(cluster) {
+      		return Leaflet.divIcon({ html: outsideThis.createClusteredIconHTML("assets/icon/parking.png", cluster)});
+      	}
+      });
 
       for (let i = 0; i < this.buildings.length; i++) {
         const building = this.buildings[i];
@@ -648,7 +695,8 @@ export class HomePage implements OnInit {
 
         // let buildingCoors: ILatLng = coords
 
-        building['COORS'] = Leaflet.latLngBounds(coords);
+        // building['COORS'] = Leaflet.latLngBounds(coords);
+        building['COORS'] = coords;
 
         //if it is not a parking structure
         var fillC = '#eaf0ff';
@@ -660,13 +708,26 @@ export class HomePage implements OnInit {
           fillC = '#808080';
           strokeC = '#454545';
 
+          polygon = Leaflet.polygon(building['COORS'], {
+            stroke: true,
+            color: strokeC,
+            fill: true,
+            fillColor: fillC,
+            fillOpacity: 0.8,
+            interactive: false ////////maybe
+          });
+
+          //add the parking polygon to the map
+          polygon.addTo(this.map);
+
+
           //add the parking marker
           //get the center
-          var center = building['COORS'].getCenter();
+          var center = polygon.getCenter();
           //build the html
           var parkingHTML = `<div class="ion-text-wrap" style="text-align: 'center'; height: 'auto'; width: 'auto'; padding: '0px'; margin: '-5px' ">
           <p>` + building['FULL_NAME'] + `</p>`;
-          for (let i = 0; i < marker.get('des').length; i++) {
+          for (let i = 0; i < building['DESCRIPTION'].length; i++) {
             parkingHTML += `<small>`+ building['DESCRIPTION'][i] + `</small>`;
           }
           parkingHTML += `</div>`;
@@ -676,19 +737,11 @@ export class HomePage implements OnInit {
             Leaflet.marker(center, {
               icon: Leaflet.icon({
                 iconUrl: 'assets/icon/parking.png',
-                iconSize:     [48, 48]
+                iconSize: [48, 48]
               })
             }).bindPopup(parkingHTML)
           );
 
-          polygon = Leaflet.polygon(building['COORS'], {
-            stroke: true,
-            color: strokeC,
-            fill: true,
-            fillColor: fillC,
-            fillOpacity: 0.8,
-            interactive: false
-          });
         } else {
           //create a regular building polygon
 
@@ -703,6 +756,7 @@ export class HomePage implements OnInit {
           buildingHTML = `<div class="infoWindow ion-text-nowrap">
           `+ buildingHTML + `</div>`;
 
+          // console.log(building['COORS']);
           //create leaflet polygon
           polygon = Leaflet.polygon(building['COORS'], {
             stroke: true,
@@ -712,11 +766,13 @@ export class HomePage implements OnInit {
             fillOpacity: 0.8,
             interactive: true
           }).bindPopup(buildingHTML);
+
+          polygon.addTo(this.map); //add to the map
+
         }
 
-        building['POLYGON'] = polygon;
+        // building['POLYGON'] = polygon;
 
-        polygon.addTo(map); //add to the map
 
         // // create polygon
         // let polygon: Polygon = this.map.addPolygonSync({
@@ -807,6 +863,10 @@ export class HomePage implements OnInit {
       }
 
       this.map.addLayer(this.parkingMarkerCluster);
+
+      this.map.addEventListener("PARKING_MARKER_CLUSTER", (data:any) => {
+        this.toggleParkingClusterMarker();
+      })
 
       // //set up for parking marker cluster
       // this.parkingMarkerClusterOpts = {
@@ -903,6 +963,8 @@ export class HomePage implements OnInit {
 
     }
 
+    /////////////////////////////// TOAST
+
     async dismissActiveToast() {
       try {
         await this.toast.dismiss();
@@ -949,6 +1011,10 @@ export class HomePage implements OnInit {
       //   this.dismissActiveToast();
       // }, 5000);
     }
+
+    /////////////////////////////// END TOAST
+
+    /////////////////////////////// Begin Location functions
 
     createMyLocation(lat, lng, acc) {
       this.mylocationMarker = this.map.addMarkerSync({
@@ -1037,34 +1103,14 @@ export class HomePage implements OnInit {
       }
     }
 
-
+    /////////////////////////////// END location functions
 
     changeStatus(filter_name) {
-      this.map.trigger(filter_name);
+      this.map.fire(filter_name);
+      console.log("firing" + filter_name)
     }
 
-    async goToPage(buildingData) { //open modal
-      // console.log(buildingData);
-      const modal = await this.modalController.create({
-        component: BuildingModalPage,
-        componentProps: {
-          building: buildingData
-        },
-        swipeToClose: true,
-        cssClass: 'my-modal'
-      });
 
-      modal.onDidDismiss().then((detail: OverlayEventDetail) => {
-        try {
-          if(detail.data.redirect) {
-          }
-        } catch (error) {
-          // console.log("no redirect");
-        }
-      });
-      this.closeEverything();
-      await modal.present();
-    }
 
     getItems(ev: any) { //for search functionality
       this.filteredItems = []; //reset filteredItems
@@ -1104,11 +1150,13 @@ export class HomePage implements OnInit {
         //see if cluster is active
         loc = item['MARKER_OPTIONS'][0]['position'];
         if(!item['MARKER_CLUSTER']) {
-          this.toggleClusterMarker(item, true);
+          this.toggleClusterMarker(item);
         }
       }
       this.animateCamera(loc['lat'], loc['lng']);
     }
+
+    /////////////////////////////// BEG ION-FAB related functions
 
     stop_close(event: any) {
       try {
@@ -1120,9 +1168,9 @@ export class HomePage implements OnInit {
       return false;
     }
 
-    publishEvent(eventName: string, data: any) {
-      this.events.publish(eventName, data);
-    }
+    // publishEvent(eventName: string, data: any) {
+    //   this.events.publish(eventName, data);
+    // }
 
     onPress(data, filter=true) {
       // console.log("press");
@@ -1144,9 +1192,33 @@ export class HomePage implements OnInit {
       }, 500); //hold for 500 ms
     }
 
+    /////////////////////////////// END ION-FAB related functions
 
 
     /////////////////////////////// MODALS
+
+    async goToPage(buildingData) { //open modal
+      // console.log(buildingData);
+      const modal = await this.modalController.create({
+        component: BuildingModalPage,
+        componentProps: {
+          building: buildingData
+        },
+        swipeToClose: true,
+        cssClass: 'my-modal'
+      });
+
+      modal.onDidDismiss().then((detail: OverlayEventDetail) => {
+        try {
+          if(detail.data.redirect) {
+          }
+        } catch (error) {
+          // console.log("no redirect");
+        }
+      });
+      this.closeEverything();
+      await modal.present();
+    }
 
     async openFilterModal(filterData) {
       // console.log(filterData);
@@ -1242,9 +1314,13 @@ export class HomePage implements OnInit {
       await modal.present();
     }
 
+    /////////////////////////////// END MODALS
+
+
     /////////////////////////////// EXTRA METHODS
 
     closeEverything() {
+      // console.log("close")
       // try {
       //   this.htmlInfoWindow.close();
       // } catch (error) {
@@ -1254,5 +1330,8 @@ export class HomePage implements OnInit {
       this.itemAvailable = false;
       this.filteredItems = [];
     }
+
+    /////////////////////////////// END EXTRA METHODS
+
 
 }
