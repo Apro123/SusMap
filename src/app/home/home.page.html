@@ -34,7 +34,7 @@
           <ion-icon name="color-filter-outline"></ion-icon>
         </ion-fab-button>
         <ion-fab-list side="bottom">
-          <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); changeStatus(filter['FILTER_NAME'])" (press)="onPress(filter)" (pressup)="stop_close($event);">
+          <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); changeStatus(filter['FILTER_NAME'])" (mousedown)="onPress(filter)" (mouseup)="this.pressFlag=false; stop_close($event);">
             <ion-icon *ngIf="!filter['ACTIVE']" [name]="filter['ICON']"></ion-icon>
             <ion-icon *ngIf="filter['ACTIVE']" [name]="filter['ICON-SELECTED']"></ion-icon>
           </ion-fab-button>

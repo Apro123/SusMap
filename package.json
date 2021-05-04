@@ -9,7 +9,8 @@
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "ionic": "ionic serve"
   },
   "private": true,
   "dependencies": {
@@ -33,7 +34,6 @@
     "cordova-plugin-tts": "^0.2.3",
     "cordova-sqlite-storage": "^5.0.0",
     "core-js": "^2.5.4",
-    "hammerjs": "^2.0.8",
     "ionic-header-parallax": "^2.2.2",
     "jquery": "^3.6.0",
     "leaflet": "^1.7.1",

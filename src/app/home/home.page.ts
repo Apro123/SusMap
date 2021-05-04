@@ -51,15 +51,6 @@ export class HomePage {
     //     active: false,
     //     data: [{ all the filter data }],
     //     cluster: [Leaflet marker cluster group objects (clusters+markers)]
-      ///not implemented  // markerData: [ {
-        //  title: //for the search only
-        //  description: //for the search only
-        //  icon: //for comparison purposes and marker clusterered icon
-        //  marker cluster: //actual leaflet object
-        //  marker cluster options: //so that you can recreate the cluster
-        //  marker options: //for the cluster. used to add multiple marker option data. if only size one then a singular marker will be created
-        //  marker: //for regular singular markers
-        //  }, ...]
     //   },
     // ];
 
@@ -90,7 +81,7 @@ export class HomePage {
     public filteredItems = []; //for search functionality
 
     //press and hold functionality
-    private pressFlag = false; //press and hold for filter items
+    public pressFlag = false; //press and hold for filter items
     // @ViewChild('paragraph') p: ElementRef;
 
     //settings and about page
@@ -293,7 +284,7 @@ export class HomePage {
 
       // set the center with zoom = min zoom plus one
       var center = this.settings["LOCATIONS"][0]; //the first one is the center
-      this.map.setView(this.settings["LOCATIONS"][0], this.settings["MIN_ZOOM"]+3);
+      this.map.setView(this.settings["LOCATIONS"][0], this.settings["ZOOM"]);
       // set the minimum zoon
       this.map.setMinZoom(this.settings["MIN_ZOOM"]);
       // set the max zoom
@@ -329,7 +320,7 @@ export class HomePage {
     /////////////////////////////// END MAIN MAP INITIALIZATION METHODS
 
 
-    /////////////////////////////// POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
+    /////////////////////////////// BEGIN POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
 
     //function to call when filter data recived
     implementFilterData(data) {
@@ -936,7 +927,7 @@ export class HomePage {
     //   });
     // }
 
-    /////////////////////////////// POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
+    /////////////////////////////// END POLYGON & MARKER & MARKER CLUSTER CREATION METHODS
 
     async animateCamera(lat, long) {
       console.log("animating camera");
@@ -1189,7 +1180,7 @@ export class HomePage {
         } else {
           // console.log("did not hold");
         }
-      }, 500); //hold for 500 ms
+      }, 500); // hold for 500 ms
     }
 
     /////////////////////////////// END ION-FAB related functions
@@ -1197,7 +1188,7 @@ export class HomePage {
 
     /////////////////////////////// MODALS
 
-    async goToPage(buildingData) { //open modal
+    async goToPage(buildingData) { // open modal
       // console.log(buildingData);
       const modal = await this.modalController.create({
         component: BuildingModalPage,
@@ -1253,7 +1244,7 @@ export class HomePage {
           about: this.about
         },
         swipeToClose: true,
-        cssClass: 'about-modal' //same css class
+        cssClass: 'about-modal' // same css class
       });
 
       modal.onDidDismiss().then((detail: OverlayEventDetail) => {});
@@ -1292,7 +1283,7 @@ export class HomePage {
           buildings: this.buildings,
         },
         swipeToClose: true,
-        cssClass: 'filter-modal' //same css class
+        cssClass: 'filter-modal' // same css class
       });
 
       modal.onDidDismiss().then((detail: OverlayEventDetail) => {
