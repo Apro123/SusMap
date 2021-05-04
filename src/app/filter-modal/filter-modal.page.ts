@@ -9,19 +9,22 @@ import { ModalController } from '@ionic/angular';
 export class FilterModalPage implements OnInit {
 
   filter = {};
+  name = "";
+  icon = "";
 
   constructor(
     private modalController: ModalController
   ) { }
 
   ngOnInit() {
+    // console.log(this.icon);
   }
 
-  dismiss(redirect: boolean, markerDataItem) {
+  dismiss(redirect: boolean, index) {
     this.modalController.dismiss({
       'dismissed': true,
       'redirect': redirect,
-      'markerDataItem': markerDataItem,
+      'markerDataItemIndex': index,
     });
   }
 

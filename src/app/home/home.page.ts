@@ -34,6 +34,7 @@ import * as $ from 'jquery'; //used for leaflet bug
 import * as Leaflet from 'leaflet';
 import 'leaflet.markercluster';
 import { createGesture, Gesture } from '@ionic/core';
+import {filter} from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -51,6 +52,7 @@ export class HomePage {
     //     active: false,
     //     data: [{ all the filter data }],
     //     cluster: [Leaflet marker cluster group objects (clusters+markers)]
+    //     clusteredata: [{ clustered filter data }]
     //   },
     // ];
 
@@ -354,6 +356,7 @@ export class HomePage {
         //dismiss the loading container
         this.loading.dismiss();
         console.log("added all markers and listeners");
+        console.log(this.filters);
       });
 
       //subscribe to any filter clicks
@@ -428,7 +431,6 @@ export class HomePage {
       //flip active status:
       filt['ACTIVE'] = !filt['ACTIVE'];
 
-      // TODO: look into using addLayers and removeLayers
       for (var i = 0; i < filt['CLUSTER'].length; i++) {
         //need to add the layers of all the marker cluster groups
         if(filt['ACTIVE']) {
@@ -498,6 +500,7 @@ export class HomePage {
         // previous icon, used for clustering of similar icons
         let prevIcon = "";
 
+        filt['CLUSTEREDATA'] = [];
         for (let i = 0; i < filt['DATA'].length; i++) {
           // current item = filt['DATA'][i]; or arr[j]
 
@@ -561,8 +564,18 @@ export class HomePage {
           if(prevIcon != "" && iconURL === prevIcon) {
             // console.log("prev")
             filt['CLUSTER'][filt['CLUSTER'].length-1].addLayer(marker);
+
+            //add the lats and longs
+            filt['CLUSTEREDATA'][filt['CLUSTEREDATA'].length-1]['COOR'].push([filt['DATA'][i]['LATITUDE'], filt['DATA'][i]['LONGITUDE']]);
           } else {
             //add toSearch here and the filter list. use promises to search for the items in the multiple individiual filter lists
+            filt['CLUSTEREDATA'].push({
+              "ICON": iconURL,
+              "TITLE": filt['DATA'][i]['TITLE'],
+              "DESCRIPTION": filt['DATA'][i]['DESCRIPTION'],
+              "COOR": [[filt['DATA'][i]['LATITUDE'], filt['DATA'][i]['LONGITUDE']]]
+            });
+
 
             //added in order to call outside functions and variables since leaflet overrides "this" in callback functions
             const outsideThis = this;
@@ -577,6 +590,7 @@ export class HomePage {
             newMarkerGrp.addLayer(marker);
             // this.map.addLayer(newMarkerGrp);
             // this.map.removeLayer(newMarkerGrp);
+
             filt['CLUSTER'].push(newMarkerGrp);
             prevIcon = iconURL;
           }
@@ -762,6 +776,8 @@ export class HomePage {
 
         }
 
+        building['POLYGON'] = polygon;
+
         // building['POLYGON'] = polygon;
 
 
@@ -854,6 +870,9 @@ export class HomePage {
       }
 
       this.map.addLayer(this.parkingMarkerCluster);
+
+      console.log(this.buildings);
+
 
       this.map.addEventListener("PARKING_MARKER_CLUSTER", (data:any) => {
         this.toggleParkingClusterMarker();
@@ -1005,7 +1024,7 @@ export class HomePage {
 
     /////////////////////////////// END TOAST
 
-    /////////////////////////////// Begin Location functions
+    /////////////////////////////// BEGIN Location functions
 
     createMyLocation(lat, lng, acc) {
       this.mylocationMarker = this.map.addMarkerSync({
@@ -1112,7 +1131,7 @@ export class HomePage {
         this.itemAvailable = true;
         // console.log(this.toSearch);
 
-        //adding dynamically the fitlered items
+        //adding dynamically the filtered items
         for (let index = 0; index < this.toSearch.length; index++) {
           const item = this.toSearch[index];
           if(((item['FULL_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1) || ((item['TITLE']+"").toUpperCase().search(val.toUpperCase()) > -1) || (item['DESCRIPTION'].toUpperCase().search(val.toUpperCase()) > -1) || ((item['SHORTENED_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1)) {
@@ -1124,27 +1143,60 @@ export class HomePage {
       }
     }
 
-    goToItem(item) {
-      // this.search = false;
-      var loc: ILatLng;
-      if(item['MARKER']) {
-        //filter item
-        loc = item['MARKER'].getPosition();
-        item['MARKER'].setVisible(true);
-        item['MARKER'].trigger(GoogleMapsEvent.MARKER_CLICK, loc);
-      } else if (item['POLYGON']){
-        //building or parking
-        loc = (new LatLngBounds(item['COORS'])).getCenter();
-        item['POLYGON'].trigger(GoogleMapsEvent.POLYGON_CLICK, loc);
-      } else if(item['MARKER_CLUSTER_OPTIONS']) {
-        //cluster item
-        //see if cluster is active
-        loc = item['MARKER_OPTIONS'][0]['position'];
-        if(!item['MARKER_CLUSTER']) {
-          this.toggleClusterMarker(item);
+    goToItem(fdata, index=0) {
+      console.log(fdata)
+
+      if(fdata['BUILDING_ID']) { //building or parking
+        //zoom to bounds
+        this.map.fitBounds(fdata['COORS']);
+
+        //if parking cluster
+        if(fdata['PARKING']) {
+          //toggle parking cluster
+          if(!this.map.hasLayer(this.parkingMarkerCluster)) {
+            this.map.addLayer(this.parkingMarkerCluster);
+          }
         }
+        //open popup
+        fdata['POLYGON'].openPopup();
+      } else {
+        // zoom to bounds
+        this.map.fitBounds(fdata['CLUSTEREDATA'][index]['COOR']);
+        // toggle the cluster marker
+        this.map.addLayer(fdata['CLUSTER'][index]);
       }
-      this.animateCamera(loc['lat'], loc['lng']);
+
+
+      //go to location
+      // console.log(fdata['CLUSTER'])
+      //
+      // console.log(index);
+      //
+      // console.log(fdata['CLUSTER'][index])
+
+      // console.log(fdata['CLUSTER'][index].zoomToBounds({padding: [20, 20]}));
+
+      // this.search = false;
+
+      // var loc: ILatLng;
+      // if(item['MARKER']) {
+      //   //filter item
+      //   loc = item['MARKER'].getPosition();
+      //   item['MARKER'].setVisible(true);
+      //   item['MARKER'].trigger(GoogleMapsEvent.MARKER_CLICK, loc);
+      // } else if (item['POLYGON']){
+      //   //building or parking
+      //   loc = (new LatLngBounds(item['COORS'])).getCenter();
+      //   item['POLYGON'].trigger(GoogleMapsEvent.POLYGON_CLICK, loc);
+      // } else if(item['MARKER_CLUSTER_OPTIONS']) {
+      //   //cluster item
+      //   //see if cluster is active
+      //   loc = item['MARKER_OPTIONS'][0]['position'];
+      //   if(!item['MARKER_CLUSTER']) {
+      //     this.toggleClusterMarker(item);
+      //   }
+      // }
+      // this.animateCamera(loc['lat'], loc['lng']);
     }
 
     /////////////////////////////// BEG ION-FAB related functions
@@ -1163,14 +1215,14 @@ export class HomePage {
     //   this.events.publish(eventName, data);
     // }
 
-    onPress(data, filter=true) {
+    onPress(fdata, filter=true) {
       // console.log("press");
       this.pressFlag = true;
       // this.pressUpLocation = true;
       setTimeout(() => {
         if(this.pressFlag) {
           if(filter) {
-            this.openFilterModal(data);
+            this.openFilterModal(fdata);
           } else {
             // console.log("mylocation hold");
             this.openTosPPModal(false);
@@ -1211,12 +1263,14 @@ export class HomePage {
       await modal.present();
     }
 
-    async openFilterModal(filterData) {
+    async openFilterModal(filterData) { //clustered data
       // console.log(filterData);
       const modal = await this.modalController.create({
         component: FilterModalPage,
         componentProps: {
-          filter: filterData
+          filter: filterData['CLUSTEREDATA'],
+          name: filterData['FILTER_NAME'],
+          icon: filterData['ICON']
         },
         swipeToClose: true,
         cssClass: 'filter-modal'
@@ -1224,9 +1278,10 @@ export class HomePage {
 
       modal.onDidDismiss().then((detail: OverlayEventDetail) => {
         try {
-          // console.log(detail.data);
+          console.log(detail.data);
           if(detail.data.redirect) {
-            this.goToItem(detail.data['markerDataItem']);
+            console.log(filterData)
+            this.goToItem(filterData, detail.data['markerDataItemIndex']);
           }
         } catch (error) {
           // console.log("no redirect");

@@ -1,26 +1,26 @@
 <ion-header>
   <ion-toolbar>
-    <ion-label class="filter-title ion-text-center ion-text-wrap">{{filter['FILTER_NAME']}}</ion-label>
+    <ion-label class="filter-title ion-text-center ion-text-wrap">{{name}}</ion-label>
 
     <ion-buttons slot="end">
       <ion-button>
-        <ion-icon class="icon-filter" name="{{filter['ICON']}}" slot="end"></ion-icon>
+        <ion-icon class="icon-filter" name="{{icon}}" slot="end"></ion-icon>
       </ion-button>
     </ion-buttons>
 
   </ion-toolbar>
 </ion-header>
 
-<ion-content scrolly="true">
+<ion-content scroll-y="true" scrollY="true">
   <!-- <ion-header collapse="condense">
     <ion-title>{{filter['FILTER_NAME']}}</ion-title>
     <ion-label>{{filter['DESCRIPTION']}}</ion-label>
   </ion-header> -->
 
-  <div class="ion-padding" *ngFor="let filt of filter['MARKER_DATA']">
+  <div class="ion-padding" *ngFor="let filt of filter; let i = index">
     <ion-item lines="none">
       <ion-label class="ion-text-wrap title" slot="start">{{filt['TITLE']}}</ion-label>
-      <img class="icon-filter" *ngIf="filt['ICON']" src="{{filt['ICON']['url']}}" slot="end" (click)="dismiss(true, filt)">
+      <img class="icon-filter" *ngIf="filt['ICON']" src="{{filt['ICON']}}" slot="end" (click)="dismiss(true, i)">
     </ion-item>
     <p class="text">{{filt['DESCRIPTION']}}</p>
     <hr>
