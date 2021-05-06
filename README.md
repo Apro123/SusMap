@@ -83,19 +83,6 @@ SusMap is currently extended with the following plugins. Instructions on how to 
 |[ Cordova GeoLocation](https://ionicframework.com/docs/native/geolocation) |
 | (Optional) [Travis](https://docs.travis-ci.com/) |
 
-## Build Your Own Map
-
-There are a couple of steps to do when building your own app:
-1. Follow install instructions above
-2. Get your own sheets api key [here](https://developers.google.com/sheets/api/guides/authorizing)
-3. Follow this [article](https://support.asinzen.com/article/516-how-do-i-get-my-google-spreadsheet-id) to get your sheets ID
-4. Replace the sheets api key and the sheets ID in the src/app/services/app-data.service.ts file
-5. Get your Google Maps API key
-6. Replace google maps api key where is says "API_KEY_FOR_BROWSER_RELEASE" in src/app/app.component.ts
-7. Fill data into sheets using the specified format [below](#google-sheets-formatting)
-8. Build project using instructions above
-9. Run project and Voila!
-
 ### Google Sheets Formatting
 
 SusMap uses google sheets to store and change data on the app
