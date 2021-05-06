@@ -24,8 +24,8 @@ before_deploy:
   # Set up git user name and tag this commit
   - git config --local user.name "Apro123"
   - git config --local user.email "akapoor3@ucmerced.edu"
-  - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
-  - git tag $TRAVIS_TAG -a -m "Tag Generated from TravisCI"
+  - git tag $PROJ_VERSION
+  - git commit -m "added tag"
   - git push origin master && git push origin master --tags
 deploy:
  - provider: releases
