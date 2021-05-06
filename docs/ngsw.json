@@ -1,12 +1,15 @@
 {
   "configVersion": 1,
-  "timestamp": 1609888659060,
+  "timestamp": 1620324265948,
   "index": "/index.html",
   "assetGroups": [
     {
       "name": "app",
       "installMode": "prefetch",
       "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "urls": [
         "/favicon.ico",
         "/index.html",
@@ -18,6 +21,9 @@
       "name": "assets",
       "installMode": "lazy",
       "updateMode": "prefetch",
+      "cacheQueryOptions": {
+        "ignoreVary": true
+      },
       "urls": [
         "/assets/icon/bike.png",
         "/assets/icon/bus.png",
@@ -65,7 +71,10 @@
         "/assets/images/campus.jpg",
         "/assets/images/cool-background.png",
         "/assets/shapes.svg",
-        "/cool-background.6ef8b2701bd3f935df50.png",
+        "/cool-background.9140fc0dd622e75aebf2.png",
+        "/layers-2x.8f2c4d11474275fbc161.png",
+        "/layers.416d91365b44e4b4f477.png",
+        "/marker-icon.2b3e1faf89f94a483539.png",
         "/plugins/cordova-plugin-device/src/browser/DeviceProxy.js",
         "/plugins/cordova-plugin-device/www/device.js",
         "/plugins/cordova-plugin-googlemaps/src/browser/CordovaGoogleMaps.js",
@@ -179,10 +188,13 @@
     "/assets/images/campus.jpg": "6d04ec8a16bee558442e87e756452932b4a00882",
     "/assets/images/cool-background.png": "7655c279e40a30965050801a5acea87ea9abda66",
     "/assets/shapes.svg": "5413e95adabcb2cb639970051f55e0ddb64ace53",
-    "/cool-background.6ef8b2701bd3f935df50.png": "7655c279e40a30965050801a5acea87ea9abda66",
+    "/cool-background.9140fc0dd622e75aebf2.png": "7655c279e40a30965050801a5acea87ea9abda66",
     "/favicon.ico": "696dfbca3c3326f3a7832c34da7188bf98d59dbe",
-    "/index.html": "ba50fa4c5e5945b9758245786733532b46234816",
+    "/index.html": "2fa4dc00a6b7cfb52d7cf930b88c38ef7eb2936c",
+    "/layers-2x.8f2c4d11474275fbc161.png": "152a162333e46d24f9d89f566312fc0c64011dee",
+    "/layers.416d91365b44e4b4f477.png": "c9e7528e491a39232ba24a2706c6c739d6fb0f06",
     "/manifest.webmanifest": "448139c4935c7caef796234781d1b6b709d0ddad",
+    "/marker-icon.2b3e1faf89f94a483539.png": "60a90bcbb2b42b7ddb4556db94eb7c1084b0e5da",
     "/plugins/cordova-plugin-device/src/browser/DeviceProxy.js": "07e52df2dd87e6483a9b2e47e6852414c8e24485",
     "/plugins/cordova-plugin-device/www/device.js": "3384a9fbcbac5606947d23051b28f36611a91513",
     "/plugins/cordova-plugin-googlemaps/src/browser/CordovaGoogleMaps.js": "1cdc0195e4d52f86a9a2cfac835c9e57da0f2ad4",
@@ -262,5 +274,6 @@
       "positive": false,
       "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
     }
-  ]
+  ],
+  "navigationRequestStrategy": "performance"
 }
