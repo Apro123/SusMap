@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { MenuController } from '@ionic/angular';
-import { EventService } from './../events/event.service';
+// import { MenuController } from '@ionic/angular';
+// import { EventService } from './../events/event.service';
 import { AppDataService } from './../services/app-data.service';
 
 @Component({
@@ -15,20 +15,21 @@ export class FolderPage implements OnInit {
 
   constructor(
     private activatedRoute: ActivatedRoute,
-    private menu: MenuController,
-    private events: EventService,
+    // private menu: MenuController,
+    // private events: EventService,
     private info: AppDataService
   ) { }
 
   ionViewDidEnter() {
-    this.menu.enable(true,'outsideMap');
+    console.log(this.building);
+    // this.menu.enable(true,'outsideMap');
   }
 
   async ngOnInit() {
     var folder: string;
     folder = this.activatedRoute.snapshot.paramMap.get('id');
 
-    this.events.publish('page', Number(folder));
+    // this.events.publish('page', Number(folder));
     this.id = Number(folder);
     await this.info.getSpecificBuildingData(this.id).then((data) => {
       if(data) {

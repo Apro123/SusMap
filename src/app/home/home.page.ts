@@ -112,6 +112,7 @@ export class HomePage {
       enableHighAccuracy: true
     }
     private pressUpLocation = false;
+    private myLocationButtonClicked = false;
 
     constructor(
       public toastCtrl: ToastController,
@@ -159,6 +160,10 @@ export class HomePage {
 
     //main beginning method to build the map and all the marker/markerclusters
     async buildMap() {
+      //empty everything just in case
+      this.buildings = []
+      this.filters = [];
+
       //loading controller object created in case data fetch takes a long time
       this.loading = await this.loadingController.create({
         spinner: "bubbles",
@@ -420,7 +425,8 @@ export class HomePage {
     // }
 
     createPopupHTML(title, desc, iconURL) {
-      return `<div class="markerInfoWindow" style="text-align: 'center'; min-height: '20vh'; min-width: '45vw'; padding: '0px'; margin: '-1vw' ">
+      // min-height: 20vh; min-width: 45vw;
+      return `<div class="markerInfoWindow" style="text-align: center; padding: 0px; margin: -1vw ">
         <h5>` + title + `</h5>
         <p>` + desc + `</p>
         <small style="visibility: hidden;">`+iconURL+`</small>
@@ -730,7 +736,7 @@ export class HomePage {
           //get the center
           var center = polygon.getCenter();
           //build the html
-          var parkingHTML = `<div class="ion-text-wrap" style="text-align: 'center'; height: 'auto'; width: 'auto'; padding: '0px'; margin: '-5px' ">
+          var parkingHTML = `<div class="ion-text-wrap" style="text-align: center; height: auto; width: auto; padding: 0px; margin: -5px ">
           <p>` + building['FULL_NAME'] + `</p>`;
           for (let i = 0; i < building['DESCRIPTION'].length; i++) {
             parkingHTML += `<small>`+ building['DESCRIPTION'][i] + `</small>`;
@@ -950,13 +956,14 @@ export class HomePage {
 
     async animateCamera(lat, long) {
       console.log("animating camera");
-      this.map.animateCamera({
-        target: {lat: lat, lng: long},
-        zoom: 17,
-        tilt: 0,
-        // bearing: 140,
-        duration: 10000
-      });
+      this.map.flyTo({lat:lat, lng:long});
+      // this.map.animateCamera({
+      //   target: {lat: lat, lng: long},
+      //   zoom: 17,
+      //   tilt: 0,
+      //   // bearing: 140,
+      //   duration: 10000
+      // });
     }
 
     handleLocationChange() {
@@ -1027,47 +1034,82 @@ export class HomePage {
     /////////////////////////////// BEGIN Location functions
 
     createMyLocation(lat, lng, acc) {
-      this.mylocationMarker = this.map.addMarkerSync({
-        position: {
-          lat: lat,
-          lng: lng
-        },
-        title: "You are here!",
-        animation: "DROP",
+      // console.log(acc);
+      acc = 11-acc;
+      this.mylocationCircle = Leaflet.circle({lat:lat, lng: lng}, {
+        radius: (acc*50),
+        fill: true,
+        stroke: true,
+        color: '#4ecd00',
+        fillColor: '#a2fa78'
       });
-      this.mylocationMarker.on(GoogleMapsEvent.MARKER_CLICK).subscribe((p) => {
-        console.log("marker click");
-        this.mylocationMarker.showInfoWindow();
+      this.mylocationCircle.bringToBack();
+      this.mylocationCircle.addTo(this.map);
+
+      var lIcon = Leaflet.icon({
+        iconUrl: "svg/location-outline.svg",
+        iconSize: [48,48]
       })
 
-      this.mylocationCircle = this.map.addCircleSync({
-        center: this.mylocationMarker.getPosition(),
-        radius: Math.abs(20-acc),
-        fillColor: "green",
-        strokeWidth: 1
+      this.mylocationMarker = Leaflet.marker({lat:lat, lng: lng}, {
+        icon: lIcon,
+        title: "You are here!",
+        // interactive: false
+        // riseOnHover: true
       });
+      this.mylocationMarker.bindPopup("You are here!")
+      this.mylocationMarker.addTo(this.map);
+
+
+      // this.mylocationMarker = this.map.addMarkerSync({
+      //   position: {
+      //     lat: lat,
+      //     lng: lng
+      //   },
+      //   title: "You are here!",
+      //   animation: "DROP",
+      // });
+      // this.mylocationMarker.on(GoogleMapsEvent.MARKER_CLICK).subscribe((p) => {
+      //   console.log("marker click");
+      //   this.mylocationMarker.showInfoWindow();
+      // })
+      //
+      // this.mylocationCircle = this.map.addCircleSync({
+      //   center: this.mylocationMarker.getPosition(),
+      //   radius: Math.abs(20-acc),
+      //   fillColor: "green",
+      //   strokeWidth: 1
+      // });
 
       // this.mylocationMarker.bindTo("position", this.mylocationCircle, "center");
     }
 
     updateMyLocation(lat, lng, acc) {
-      try {
-        this.mylocationMarker.setPosition({
-          lat: lat,
-          lng: lng
-        });
-        this.mylocationCircle.setCenter(this.mylocationMarker.getPosition());
-        this.mylocationCircle.setRadius(Math.abs(20-acc));
-      } catch (error) {
-        console.log(error); //in case the markers were not created
-        this.createMyLocation(lat, lng, acc);
-      }
+      acc = 11-acc;
+      this.mylocationCircle.setLatLng({lat: lat, lng: lng});
+      this.mylocationCircle.setRadius((acc*50));
+
+      this.mylocationMarker.setLatLng({lat: lat, lng: lng});
+
+
+      // try {
+      //   this.mylocationMarker.setPosition({
+      //     lat: lat,
+      //     lng: lng
+      //   });
+      //   this.mylocationCircle.setCenter(this.mylocationMarker.getPosition());
+      //   this.mylocationCircle.setRadius(Math.abs(20-acc));
+      // } catch (error) {
+      //   console.log(error); //in case the markers were not created
+      //   this.createMyLocation(lat, lng, acc);
+      // }
 
     }
 
     async toggleMyLocation() {
       // console.log(this.mylocationEnabled);
-      if(!this.mylocationEnabled) {
+      if(!this.mylocationEnabled && !this.myLocationButtonClicked) {
+        this.myLocationButtonClicked = true;
         await this.createToast("Loading", "Retrieving location...", "warning");
         this.geolocation.getCurrentPosition(this.geoOptions).then(async (data: Geoposition) => {
           // console.log(data.coords);
@@ -1075,21 +1117,25 @@ export class HomePage {
           await this.createToast("Sucessfully turned ON Location Service", "Hit the location (World) button to turn off location service. Hold the button for more options.", "success");
 
           if(!this.mylocationFlag) {
-            this.createMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
+            this.createMyLocation(37.36389458, -120.4239584, data.coords.accuracy);
+            // this.createMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
             this.mylocationFlag = true;
           } else {
-            this.mylocationMarker.setVisible(true);
-            this.mylocationCircle.setVisible(true);
-            this.updateMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
+            this.mylocationMarker.addTo(this.map);
+            this.mylocationCircle.addTo(this.map);
+            this.updateMyLocation(37.36389458, -120.4239584, data.coords.accuracy);
+            // this.updateMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
           }
-          this.animateCamera(data.coords.latitude, data.coords.longitude);
-          this.mylocationMarker.showInfoWindow();
+          this.animateCamera(37.36389458, -120.4239584);
+          // this.animateCamera(data.coords.latitude, data.coords.longitude);
+          this.mylocationMarker.openPopup();
           this.mylocationEnabled = true;
 
           this.watch = this.geolocation.watchPosition(this.geoOptions).subscribe((data: Geoposition) => {
             // console.log("getting location");
             try {
-              this.updateMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
+              this.updateMyLocation(37.36389458, -120.4239584, data.coords.accuracy);
+              // this.updateMyLocation(data.coords.latitude, data.coords.longitude, data.coords.accuracy);
             } catch (err) {
               // console.log(err);
               this.createToast("Error in Retrieving Location", "You may have disabled location on the device. Error message: " + err.message, "danger");
@@ -1107,9 +1153,10 @@ export class HomePage {
       } else {
         this.createToast("Sucessfully turned OFF Location Service", "Hit the location (World) button to turn on location service again or hold for more options.", "tertiary");
         this.mylocationEnabled = false;
-        this.mylocationMarker.setVisible(false);
-        this.mylocationCircle.setVisible(false);
         this.watch.unsubscribe();
+        this.mylocationMarker.remove();
+        this.mylocationCircle.remove();
+        this.myLocationButtonClicked = false;
       }
     }
 
@@ -1117,7 +1164,7 @@ export class HomePage {
 
     changeStatus(filter_name) {
       this.map.fire(filter_name);
-      console.log("firing" + filter_name)
+      // console.log("firing" + filter_name)
     }
 
 
@@ -1131,19 +1178,47 @@ export class HomePage {
         this.itemAvailable = true;
         // console.log(this.toSearch);
 
-        //adding dynamically the filtered items
-        for (let index = 0; index < this.toSearch.length; index++) {
-          const item = this.toSearch[index];
-          if(((item['FULL_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1) || ((item['TITLE']+"").toUpperCase().search(val.toUpperCase()) > -1) || (item['DESCRIPTION'].toUpperCase().search(val.toUpperCase()) > -1) || ((item['SHORTENED_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1)) {
-            this.filteredItems.push(item);
-          }
+        for (let i = 0; i < this.filters.length; i++) {
+          const filt = this.filters[i];
+          this.addItemsFromFilters(filt, val); //async
         }
+
+        this.addItemsFromBuilding(val); //async
+
+        //adding dynamically the filtered items
+        // for (let index = 0; index < this.toSearch.length; index++) {
+        //   const item = this.toSearch[index];
+        //   if(((item['FULL_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1) || ((item['TITLE']+"").toUpperCase().search(val.toUpperCase()) > -1) || (item['DESCRIPTION'].toUpperCase().search(val.toUpperCase()) > -1) || ((item['SHORTENED_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1)) {
+        //     this.filteredItems.push(item);
+        //   }
+        // }
       } else {
         this.itemAvailable = false;
       }
     }
 
-    goToItem(fdata, index=0) {
+    async addItemsFromBuilding(val) {
+      for (let i = 0; i < this.buildings.length; i++) {
+        const item = this.buildings[i];
+        if(((item['FULL_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1) || (item['DESCRIPTION'].toUpperCase().search(val.toUpperCase()) > -1) || ((item['SHORTENED_NAME']+"").toUpperCase().search(val.toUpperCase()) > -1)) {
+          this.filteredItems.push(item);
+        }
+      }
+    }
+
+    async addItemsFromFilters(filt, val) {
+      for (let i = 0; i < filt['CLUSTEREDATA'].length; i++) {
+        const item = filt['CLUSTEREDATA'][i];
+        item['INDEX'] = i;
+        item['FILT'] = filt;
+        //Todo: combine "clusteredata" and "cluster"
+        if(((item['TITLE']+"").toUpperCase().search(val.toUpperCase()) > -1) || (item['DESCRIPTION'].toUpperCase().search(val.toUpperCase()) > -1)) {
+          this.filteredItems.push(item);
+        }
+      }
+    }
+
+    goToItem(fdata, index=-1) {
       console.log(fdata)
 
       if(fdata['BUILDING_ID']) { //building or parking
@@ -1199,7 +1274,7 @@ export class HomePage {
       // this.animateCamera(loc['lat'], loc['lng']);
     }
 
-    /////////////////////////////// BEG ION-FAB related functions
+    /////////////////////////////// BEG gesture/ION-FAB related functions
 
     stop_close(event: any) {
       try {
@@ -1215,8 +1290,12 @@ export class HomePage {
     //   this.events.publish(eventName, data);
     // }
 
+    test() {
+      console.log("test")
+    }
+
     onPress(fdata, filter=true) {
-      // console.log("press");
+      console.log("press");
       this.pressFlag = true;
       // this.pressUpLocation = true;
       setTimeout(() => {
@@ -1224,7 +1303,7 @@ export class HomePage {
           if(filter) {
             this.openFilterModal(fdata);
           } else {
-            // console.log("mylocation hold");
+            console.log("mylocation hold");
             this.openTosPPModal(false);
             // this.pressUpLocation = false;
           }
@@ -1235,7 +1314,7 @@ export class HomePage {
       }, 500); // hold for 500 ms
     }
 
-    /////////////////////////////// END ION-FAB related functions
+    /////////////////////////////// END gesture/ION-FAB related functions
 
 
     /////////////////////////////// MODALS
@@ -1278,7 +1357,7 @@ export class HomePage {
 
       modal.onDidDismiss().then((detail: OverlayEventDetail) => {
         try {
-          console.log(detail.data);
+          // console.log(detail.data);
           if(detail.data.redirect) {
             console.log(filterData)
             this.goToItem(filterData, detail.data['markerDataItemIndex']);
@@ -1345,9 +1424,11 @@ export class HomePage {
         try {
           // console.log(detail.data);
           if(!detail.data.redirect) {
-            const loc: ILatLng = (new LatLngBounds(detail.data['building']['COORS'])).getCenter();
-            this.animateCamera(loc['lat'], loc['lng']);
-            detail.data['building']['POLYGON'].trigger(GoogleMapsEvent.POLYGON_CLICK, loc);
+            this.goToItem(this.buildings[detail.data['index']]);
+
+            // const loc: ILatLng = (new LatLngBounds(detail.data['building']['COORS'])).getCenter();
+            // this.animateCamera(loc['lat'], loc['lng']);
+            // detail.data['building']['POLYGON'].trigger(GoogleMapsEvent.POLYGON_CLICK, loc);
           } else {
             // console.log("redirect to building page");
           }

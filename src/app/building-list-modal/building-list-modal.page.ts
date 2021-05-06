@@ -26,7 +26,7 @@ export class BuildingListModalPage implements OnInit {
     this.modalController.dismiss({
       'dismissed': true,
       'redirect': redirect,
-      'building': this.buildings[i],
+      'index': i,
     });
   }
 

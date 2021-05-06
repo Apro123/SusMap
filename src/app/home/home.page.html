@@ -6,10 +6,10 @@
 
     <ion-searchbar showCancelButton="always" type="text" placeholder="Search" inputmode="text" debounce="250" animated="true"  (ionChange)="getItems($event)" (ionCancel)="closeEverything();"></ion-searchbar>
     <ion-list class="search-filters" *ngIf="itemAvailable">
-      <ion-item *ngFor="let it of filteredItems" (click)="closeEverything(); goToItem(it);">
-        <img class="search-icon" *ngIf="it['ICON']" src="{{it['ICON']['url']}}" slot="end">
+      <ion-item *ngFor="let it of filteredItems">
+        <img (click)="closeEverything(); goToItem(it['FILT'], it['INDEX']);" class="search-icon" *ngIf="it['ICON']" src="{{it['ICON']}}" slot="end">
         <!-- building does not have icon -->
-        <img class="search-icon" *ngIf="!it['ICON']" src="svg/business-outline.svg" slot="end">
+        <img (click)="closeEverything(); goToItem(it);" class="search-icon" *ngIf="!it['ICON']" src="svg/business-outline.svg" slot="end">
 
         <ion-label slot="start">
           <p *ngIf="it['TITLE']">{{it['TITLE']}}</p>
@@ -39,7 +39,7 @@
           <ion-icon name="color-filter-outline"></ion-icon>
         </ion-fab-button>
         <ion-fab-list side="bottom">
-          <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); changeStatus(filter['FILTER_NAME'])" (mousedown)="onPress(filter)" (mouseup)="this.pressFlag=false; stop_close($event);">
+          <ion-fab-button class="fab-button-show" *ngFor="let filter of filters" (click)="stop_close($event); changeStatus(filter['FILTER_NAME'])" (touchstart)="onPress(filter)" (mousedown)="onPress(filter)" (touchend)="this.pressFlag=false; stop_close($event);" (mouseup)="this.pressFlag=false; stop_close($event);">
             <ion-icon *ngIf="!filter['ACTIVE']" [name]="filter['ICON']"></ion-icon>
             <ion-icon *ngIf="filter['ACTIVE']" [name]="filter['ICON-SELECTED']"></ion-icon>
           </ion-fab-button>
@@ -61,16 +61,16 @@
         </ion-fab-list>
       </ion-fab>
 
-      <!-- <ion-button class="location" (click)="closeEverything(); handleLocationChange();" shape="round">
+      <ion-button class="location" (click)="closeEverything(); handleLocationChange();" shape="round">
         <ion-icon *ngIf="locationNumber == 0" slot="icon-only" name="home-outline"></ion-icon>
         <ion-icon *ngIf="locationNumber != 0" slot="icon-only" name="locate-outline"></ion-icon>
-      </ion-button> -->
+      </ion-button>
 
-      <!-- <div class="mylocation ion-float-right ion-justify-content-end ion-align-items-center"
+      <div class="mylocation ion-float-right ion-justify-content-end ion-align-items-center"
       [class.enabled]="mylocationEnabled"
       [class.disabled]="!mylocationEnabled">
-        <img (press)="onPress({}, false);" (click)="toggleMyLocation();" src="assets/icon/location.png" alt="my-location">
-      </div> -->
+        <img (touchstart)="onPress({}, false);" (mousedown)="onPress({}, false);" (touchend)="this.pressFlag=false;" (mouseup)="this.pressFlag=false;"  (click)="toggleMyLocation();" src="assets/icon/location.png" alt="my-location">
+      </div>
 <!--    </div>-->
   </div>
 </ion-content>
