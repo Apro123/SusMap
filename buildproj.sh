@@ -16,5 +16,7 @@ case "${TRGT}" in
   export PROJ_ZIP="$PROJ_NAME-v$PROJ_VERSION.zip"
   zip -r $PROJ_ZIP www
   git fetch --tags
+  env
+  ls -al
   ;;
 esac
