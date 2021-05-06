@@ -1,7 +1,3 @@
-branches:
- only:
- - master
- - /v\d+\.\d+[a-z]/
 notifications:
   email: akapoor3@ucmerced.edu
 jobs:
