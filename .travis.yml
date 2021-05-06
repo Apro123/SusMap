@@ -1,6 +1,7 @@
 branches:
  only:
- — master
+ - master
+ - /v\d+\.\d+[a-z]/
 notifications:
   email: akapoor3@ucmerced.edu
 jobs:
@@ -33,3 +34,5 @@ deploy:
    file: $PROJ_ZIP
    on:
      tags: true
+     repo: Apro123/SusMap
+     branch: master
