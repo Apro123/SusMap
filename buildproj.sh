@@ -15,6 +15,8 @@ case "${TRGT}" in
   export PROJ_VERSION="$(cat package.json | grep version -m1 | cut -d "\"" -f4)"
   export PROJ_ZIP="$PROJ_NAME-v$PROJ_VERSION.zip"
   zip -r $PROJ_ZIP www
+  mkdir output
+  cp $PROJ_ZIP output
   git fetch --tags
   env
   ls -al

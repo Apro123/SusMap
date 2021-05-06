@@ -31,7 +31,8 @@ deploy:
    cleanup: false
    api_key: $GITHUB_TOKEN
    overwrite: true
-   file: $PROJ_ZIP
+   file_glob: true
+   file: output/*
    draft: true
    on:
      tags: true
