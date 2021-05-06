@@ -25,6 +25,8 @@
 @import "~@ionic/angular/css/text-transformation.css";
 @import "~@ionic/angular/css/flex-utils.css";
 
+@import "~leaflet/dist/leaflet.css";
+
 .my-modal .modal-wrapper{ //building modal with short description and list of items
   top: 30vh;
   left: 10vw;

@@ -38,6 +38,16 @@
               },
               {
                 "input": "src/global.scss"
+              },
+              {
+                "input": "./node_modules/leaflet/dist/leaflet.css"
+              }
+              ,
+              {
+                "input": "./node_modules/leaflet/dist/leaflet.css"
+              },
+              {
+                "input": "./node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css"
               }
             ],
             "scripts": []

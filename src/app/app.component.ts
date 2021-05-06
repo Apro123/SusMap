@@ -42,15 +42,6 @@ export class AppComponent implements OnInit {
     // });
 
     this.platform.ready().then(() => {
-      // google maps
-      Environment.setEnv({
-        // api key for server
-        'API_KEY_FOR_BROWSER_RELEASE': 'AIzaSyCm9Nmy4Swo-1nNLurhv-kfzbr_DJd-yCQ',
-
-        // api key for local development
-        'API_KEY_FOR_BROWSER_DEBUG': 'AIzaSyCm9Nmy4Swo-1nNLurhv-kfzbr_DJd-yCQ'
-      });
-
       this.statusBar.styleDefault();
       this.splashScreen.hide();
 

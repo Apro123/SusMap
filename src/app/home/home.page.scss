@@ -114,6 +114,7 @@ ion-header {
   // top: 88vh;
   position: absolute;
   bottom: 3vh;
+  z-index: 500;
 }
 
 .mylocation {
@@ -127,7 +128,8 @@ ion-header {
   width: 3em;
   height: 3em;
   right: 0.5em;
-  bottom: 7em;
+  bottom: 8em;
+  z-index: 500;
 }
 
 .mylocation.enabled {

@@ -13,7 +13,7 @@ export class TosPpPage {
   slideOpts = {
     initialSlide: 0,
     speed: 400,
-    autoHeight: true
+    // autoHeight: true
     // allowTouchMove: false
   };
   @ViewChild(IonContent, {static: true}) content: IonContent;
