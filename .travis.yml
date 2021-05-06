@@ -25,9 +25,9 @@ script:
 #  - git push origin master && git push origin master --tags
 deploy:
  - provider: releases
-   tag_name: $PROJ_VERSION
-   name: $PROJ_NAME
-   body: "SusMap"
+   tag_name: "$PROJ_VERSION"
+   name: "$PROJ_NAME"
+   body: "SusMap Next Release"
    cleanup: false
    api_key: $GITHUB_TOKEN
    overwrite: true
