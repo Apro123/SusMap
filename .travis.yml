@@ -28,10 +28,11 @@ deploy:
    tag_name: $PROJ_VERSION
    name: $PROJ_NAME
    body: "SusMap"
-   skip_cleanup: true
+   cleanup: false
    api_key: $GITHUB_TOKEN
    overwrite: true
    file: $PROJ_ZIP
+   draft: true
    on:
      tags: true
      repo: Apro123/SusMap
