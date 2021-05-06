@@ -20,18 +20,18 @@ before_script:
  — npm ci
 script:
  — ./buildproj.sh
-before_deploy:
-  # Set up git user name and tag this commit
-  - git config --local user.name "Apro123"
-  - git config --local user.email "akapoor3@ucmerced.edu"
-  - git tag $PROJ_VERSION
-  - git commit -m "added tag"
-  - git push origin master && git push origin master --tags
+#before_deploy:
+#  # Set up git user name and tag this commit
+#  - git config --local user.name "Apro123"
+#  - git config --local user.email "akapoor3@ucmerced.edu"
+#  - git tag $PROJ_VERSION
+#  - git commit -m "added tag"
+#  - git push origin master && git push origin master --tags
 deploy:
  - provider: releases
-   tag_name: $TRAVIS_TAG
-   target_commitish: $TRAVIS_COMMIT
-   name: $TRAVIS_TAG
+   tag_name: $PROJ_VERSION
+   name: $PROJ_NAME
+   body: "SusMap"
    skip_cleanup: true
    api_key: $GITHUB_TOKEN
    overwrite: true
