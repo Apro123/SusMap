@@ -10,5 +10,10 @@ case "${TRGT}" in
   ln -s favicon.ico apple-touch-icon-precomposed.png
   cd ./..
   cp platforms/browser/config.xml www/
+  cp .htaccess docs/
+  export PROJ_NAME="$(cat package.json | grep name -m1 | cut -d "\"" -f4)"
+  export PROJ_VERSION="$(cat package.json | grep version -m1 | cut -d "\"" -f4)"
+  export PROJ_ZIP="$PROJ_NAME-v$PROJ_VERSION.zip"
+  zip $PROJ_ZIP docs
   ;;
 esac
