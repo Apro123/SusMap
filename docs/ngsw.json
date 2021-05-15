@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1620324265948,
+  "timestamp": 1621119503047,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -45,6 +45,7 @@
         "/assets/icon/leaf.png",
         "/assets/icon/location.png",
         "/assets/icon/mail.png",
+        "/assets/icon/map.png",
         "/assets/icon/money-box.png",
         "/assets/icon/multicultural.png",
         "/assets/icon/parking.png",
@@ -162,6 +163,7 @@
     "/assets/icon/leaf.png": "f7a404f2d0746041bd8a0ab14b2959364e29e019",
     "/assets/icon/location.png": "8259b4dbffbfc78fd86230afe5d4691276bfef3e",
     "/assets/icon/mail.png": "f3c603c4d0b5efb84ea5e3836fc6c2080be4e6fc",
+    "/assets/icon/map.png": "dcbcd3a91bd3daea61b1397b8342c0717a1ff9a3",
     "/assets/icon/money-box.png": "b42ff618496d9b721e95fc8997d1857ba50acfd8",
     "/assets/icon/multicultural.png": "ce6c880a3a6953adf09931318c7403ba790879be",
     "/assets/icon/parking.png": "c979cc75fa400db8b2ba6357503d8c129863f234",
@@ -190,7 +192,7 @@
     "/assets/shapes.svg": "5413e95adabcb2cb639970051f55e0ddb64ace53",
     "/cool-background.9140fc0dd622e75aebf2.png": "7655c279e40a30965050801a5acea87ea9abda66",
     "/favicon.ico": "696dfbca3c3326f3a7832c34da7188bf98d59dbe",
-    "/index.html": "2fa4dc00a6b7cfb52d7cf930b88c38ef7eb2936c",
+    "/index.html": "f1468e78cf3d97c032417289581dc8c74898cf42",
     "/layers-2x.8f2c4d11474275fbc161.png": "152a162333e46d24f9d89f566312fc0c64011dee",
     "/layers.416d91365b44e4b4f477.png": "c9e7528e491a39232ba24a2706c6c739d6fb0f06",
     "/manifest.webmanifest": "448139c4935c7caef796234781d1b6b709d0ddad",
