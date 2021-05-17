@@ -78,7 +78,7 @@ SusMap is currently extended with the following plugins. Instructions on how to 
 
 | Plugin |
 | ------ |
-| [Google Maps Cordova Plugin](https://github.com/mapsplugin/cordova-plugin-googlemaps#cordova-googlemaps-plugin-for-android-ios-and-browser-v271) |
+| Leaflet |
 | [Cordova Sqlite Storage](https://ionicframework.com/docs/angular/storage) |
 |[ Cordova GeoLocation](https://ionicframework.com/docs/native/geolocation) |
 | (Optional) [Travis](https://docs.travis-ci.com/) |
